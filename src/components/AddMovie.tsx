@@ -48,7 +48,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 flex justify-center"> {/* Added flex and justify-center */}
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         onClick={() => setIsFormOpen(true)}
@@ -57,7 +57,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
       </button>
 
       {isFormOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"> {/* Added z-50 */}
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <h3 className="text-lg font-bold mb-4">Add New Movie</h3>
             <form onSubmit={handleAddMovie}>
