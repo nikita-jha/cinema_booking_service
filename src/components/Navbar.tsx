@@ -13,7 +13,7 @@ const Navbar = () => {
         <div className="space-x-6">
           <Link href="/" className="hover:text-gray-300">Home</Link>
           <Link href="/login" className="hover:text-gray-300">Login</Link>
-          <Link href="/create-account" className="hover:text-gray-300">Create Account</Link>
+          <Link href="/register" className="hover:text-gray-300">Create Account</Link>
         </div>
       </div>
     </nav>
