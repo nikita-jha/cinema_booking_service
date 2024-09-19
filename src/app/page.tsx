@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getMovies } from '../lib/firebase/firestore'; // Fetch movies from Firestore
 import MovieCard from '../components/MovieCard'; // Movie card component
 import AddMovie from '../components/AddMovie'; // Movie card component
+import Image from 'next/image'
 
 const HomePage = () => {
   const [currentlyScreeningMovies, setCurrentlyScreeningMovies] = useState([]);
@@ -47,8 +48,16 @@ const HomePage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Cinema E-Booking System</h1>
+      <div className="flex items-center justify-center mb-8">
+        {/* Adjusted the path since popcorn.png is in the root of public */}
 
+        <h1 className="text-3xl font-bold">Cinema E-Booking System</h1>
+        <img
+          src="/popcorn.png"
+          alt="Popcorn"
+          className="h-20 w-20 mr-2" // Adjust size of the image
+        />
+      </div>
       {/* Add a search bar */}
       <div className="flex justify-center mb-8">
         <input
