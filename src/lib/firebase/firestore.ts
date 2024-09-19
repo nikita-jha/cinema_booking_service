@@ -1,16 +1,25 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDocs, collection, addDoc } from 'firebase/firestore';
 import { db } from './config';
 
-export const getMovie = async () => {
-  console.log('Fetching movie from Firestore...');
-  const movieDocRef = doc(db, 'movies', 'xydFTps2l2ghe2NZyWuk'); 
-  const movieSnapshot = await getDoc(movieDocRef);
+export const getMovies = async () => {
+  console.log('Fetching all movies from Firestore...');
+  const moviesCollectionRef = collection(db, 'movies');
+  const moviesSnapshot = await getDocs(moviesCollectionRef);
 
-  if (movieSnapshot.exists()) {
-    console.log('Movie data fetched:', movieSnapshot.data());
-    return movieSnapshot.data();
-  } else {
-    console.log('No such document!');
-    return null;
+  const movies = moviesSnapshot.docs.map(doc => ({
+    id: doc.id,       // Optionally, get the document ID
+    ...doc.data(),     // Spread the document data
+  }));
+
+  console.log('Movies data fetched:', movies);
+  return movies;
+};
+
+export const addMovie = async (movie) => {
+  try {
+    const docRef = await addDoc(collection(db, 'movies'), movie);
+    console.log('Movie added with ID:', docRef.id);
+  } catch (e) {
+    console.error('Error adding movie: ', e);
   }
 };
