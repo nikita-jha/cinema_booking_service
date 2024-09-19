@@ -11,26 +11,27 @@ const HomePage = () => {
   const [comingSoonMovies, setComingSoonMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
 
+  const fetchMovies = async () => {
+    try {
+      const moviesData = await getMovies();
+
+      // Filter movies based on category
+      const currentlyScreening = moviesData.filter(
+        (movie) => movie.category === 'Currently Screening'
+      );
+      const comingSoon = moviesData.filter(
+        (movie) => movie.category === 'Coming Soon'
+      );
+
+      setCurrentlyScreeningMovies(currentlyScreening);
+      setComingSoonMovies(comingSoon);
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+    }
+  };
+
+  // Fetch movies on component mount
   useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const moviesData = await getMovies();
-
-        // Filter movies based on category
-        const currentlyScreening = moviesData.filter(
-          (movie) => movie.category === 'Currently Screening'
-        );
-        const comingSoon = moviesData.filter(
-          (movie) => movie.category === 'Coming Soon'
-        );
-
-        setCurrentlyScreeningMovies(currentlyScreening);
-        setComingSoonMovies(comingSoon);
-      } catch (error) {
-        console.error('Error fetching movies:', error);
-      }
-    };
-
     fetchMovies();
   }, []);
 
@@ -48,7 +49,6 @@ const HomePage = () => {
 
   return (
     <div>
-      {/* Move Navbar outside of the container */}
       <Navbar />
 
       {/* Main content container */}
@@ -66,8 +66,8 @@ const HomePage = () => {
           />
         </div>
 
-        <AddMovie onMovieAdded={(newMovie) => {
-        }} />
+        {/* Pass the fetchMovies function to AddMovie to trigger re-fetch */}
+        <AddMovie onMovieAdded={fetchMovies} />
 
         {/* Currently Screening Movies */}
         <h2 className="text-xl font-bold text-center mb-6">Currently Screening</h2>
