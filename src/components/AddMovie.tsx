@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { addMovie } from '../lib/firebase/firestore';
 
 interface AddMovieProps {
-  onMovieAdded: (newMovie: any) => void;
+  onMovieAdded: () => void;  // Callback to notify when a movie is added
 }
 
 const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
@@ -28,10 +28,10 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
   const handleAddMovie = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const newMovieId = await addMovie(movieData);
+      await addMovie(movieData);  // Add the movie to Firestore
       console.log('Movie successfully added!');
-      onMovieAdded({ id: newMovieId, ...movieData });
-      setIsFormOpen(false);
+      onMovieAdded();  // Notify parent to re-fetch movies
+      setIsFormOpen(false);  // Close the form after adding
       setMovieData({
         title: '',
         producer: '',
@@ -41,14 +41,14 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
         mpaaRating: '',
         category: '',
         trailerVideoUrl: '',
-      });
+      });  // Reset the form fields
     } catch (error) {
       console.error('Error adding movie:', error);
     }
   };
 
   return (
-    <div className="mb-8 flex justify-center"> {/* Added flex and justify-center */}
+    <div className="mb-8 flex justify-center">
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         onClick={() => setIsFormOpen(true)}
@@ -57,7 +57,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
       </button>
 
       {isFormOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"> {/* Added z-50 */}
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <h3 className="text-lg font-bold mb-4">Add New Movie</h3>
             <form onSubmit={handleAddMovie}>
