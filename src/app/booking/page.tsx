@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 
-
 const BookingPage = () => {
   const searchParams = useSearchParams();
   const title = searchParams.get('title');
@@ -106,15 +105,20 @@ const BookingPage = () => {
           )}
           <div className="flex justify-center">
             <Link
-                href={{
+              href={{
                 pathname: '/confirmation',
-                    // Add any query parameters if needed
-                    // query: { param1: value1, param2: value2 },
-                }}
-             >
-                <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    Proceed to Confirmation
-                </button>
+                query: {
+                  numTickets,
+                  ages: JSON.stringify(ages),
+                  showTime,
+                  showDate,
+                  trailerPictureUrl,
+                },
+              }}
+            >
+              <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Proceed to Confirmation
+              </button>
             </Link>
           </div>
         </form>
