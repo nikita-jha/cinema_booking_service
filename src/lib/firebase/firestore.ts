@@ -1,4 +1,4 @@
-import { doc, getDocs, collection, addDoc } from 'firebase/firestore';
+import { getDocs, collection, addDoc } from 'firebase/firestore';
 import { db } from './config';
 
 export const getMovies = async () => {
@@ -7,19 +7,21 @@ export const getMovies = async () => {
   const moviesSnapshot = await getDocs(moviesCollectionRef);
 
   const movies = moviesSnapshot.docs.map(doc => ({
-    id: doc.id,       // Optionally, get the document ID
-    ...doc.data(),     // Spread the document data
+    id: doc.id,
+    ...doc.data(),
   }));
 
   console.log('Movies data fetched:', movies);
   return movies;
 };
 
-export const addMovie = async (movie) => {
+export const addMovie = async (movie: any) => {
   try {
     const docRef = await addDoc(collection(db, 'movies'), movie);
     console.log('Movie added with ID:', docRef.id);
+    return docRef.id;
   } catch (e) {
     console.error('Error adding movie: ', e);
+    throw e;
   }
 };
