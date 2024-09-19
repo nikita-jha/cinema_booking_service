@@ -1,20 +1,19 @@
-// src/app/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { getMovie } from '../lib/firebase/firestore';
+import MovieCard from '../components/MovieCard';  // Adjust the path as necessary
 
 const HomePage = () => {
-  const [movie, setMovie] = useState<any>(null);
+  const [movie, setMovie] = useState(null);
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
         const movieData = await getMovie();
-        console.log('Fetched Movie Data:', movieData); // Log the movie data
         setMovie(movieData);
       } catch (error) {
-        console.error('Error fetching movie:', error); // Log any errors
+        console.error('Error fetching movie:', error);
       }
     };
 
@@ -22,13 +21,12 @@ const HomePage = () => {
   }, []);
 
   if (!movie) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   return (
-    <div>
-      <h1>Movie Data</h1>
-      <pre>{JSON.stringify(movie, null, 2)}</pre>
+    <div className="container mx-auto px-4 py-8">
+      <MovieCard movie={movie} />
     </div>
   );
 };
