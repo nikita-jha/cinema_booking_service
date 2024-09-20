@@ -13,9 +13,9 @@ const CheckoutPage = () => {
   const showDate = searchParams.get('showDate');
   const trailerPictureUrl = searchParams.get('trailerPictureUrl');
   const title = searchParams.get('title');
-  const orderTotal = searchParams.get('orderTotal');
-  const taxAmount = searchParams.get('taxAmount');
-  const overallTotal = searchParams.get('overallTotal');
+  const initialOrderTotal = parseFloat(searchParams.get('orderTotal') || '0');
+  const initialTaxAmount = parseFloat(searchParams.get('taxAmount') || '0');
+  const initialOverallTotal = parseFloat(searchParams.get('overallTotal') || '0');
 
   const [promoCode, setPromoCode] = useState<string>('');
   const [useSavedCard, setUseSavedCard] = useState<boolean>(false);
@@ -25,6 +25,10 @@ const CheckoutPage = () => {
     expirationDate: '',
     nameOnCard: '',
   });
+  const [orderTotal, setOrderTotal] = useState<number>(initialOrderTotal);
+  const [taxAmount, setTaxAmount] = useState<number>(initialTaxAmount);
+  const [overallTotal, setOverallTotal] = useState<number>(initialOverallTotal);
+  const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
 
   const handlePromoCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPromoCode(e.target.value);
@@ -40,6 +44,23 @@ const CheckoutPage = () => {
 
   const handleUseSavedCardChange = () => {
     setUseSavedCard(!useSavedCard);
+  };
+
+  const handleApplyPromoCode = () => {
+    if (promoCode === 'DISCOUNT') {
+      const discountedOrderTotal = initialOrderTotal * 0.9;
+      const newTaxAmount = discountedOrderTotal * 0.07;
+      const newOverallTotal = discountedOrderTotal + newTaxAmount;
+      setOrderTotal(discountedOrderTotal);
+      setTaxAmount(newTaxAmount);
+      setOverallTotal(newOverallTotal);
+      setIsDiscountApplied(true);
+    } else {
+      setOrderTotal(initialOrderTotal);
+      setTaxAmount(initialTaxAmount);
+      setOverallTotal(initialOverallTotal);
+      setIsDiscountApplied(false);
+    }
   };
 
   const handleConfirmPayment = () => {
@@ -59,10 +80,7 @@ const CheckoutPage = () => {
             <p className="mb-2">Show Date: {showDate}</p>
             <p className="mb-2">Show Time: {showTime}</p>
             <p className="mb-2">Number of Tickets: {numTickets}</p>
-            <p className="mb-2">Order Total: ${orderTotal}</p>
-            <p className="mb-2">Tax: ${taxAmount}</p>
-            <p className="mb-4">Overall Total: ${overallTotal}</p>
-            <div className="mb-4">
+            <div className="mb-4 flex items-center">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="promoCode">
                 Promotion Code (Optional)
               </label>
@@ -71,10 +89,22 @@ const CheckoutPage = () => {
                 id="promoCode"
                 value={promoCode}
                 onChange={handlePromoCodeChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2"
                 placeholder="Enter promotion code"
               />
+              <button
+                onClick={handleApplyPromoCode}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2"
+              >
+                Apply
+              </button>
             </div>
+            <p className="mb-2">
+              Order Total: ${orderTotal.toFixed(2)}{' '}
+              {isDiscountApplied && <span className="text-red-500">(10% Off)</span>}
+            </p>
+            <p className="mb-2">Tax: ${taxAmount.toFixed(2)}</p>
+            <p className="mb-4">Overall Total: ${overallTotal.toFixed(2)}</p>
           </div>
           <div className="w-1/2 p-4">
             <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
