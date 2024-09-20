@@ -1,24 +1,27 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { getMovies } from '../lib/firebase/firestore';
-import MovieCard from '../components/MovieCard';
-import AddMovie from '../components/AddMovie';
-import Navbar from '../components/Navbar';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { getMovies } from "../lib/firebase/firestore";
+import MovieCard from "../components/MovieCard";
+import AddMovie from "../components/AddMovie";
+import Navbar from "../components/Navbar";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import Link from 'next/link';
+
+
 
 const MovieCarousel = ({ title, movies }) => {
   const [startIndex, setStartIndex] = useState(0);
 
   const nextSlide = () => {
-    setStartIndex((prevIndex) => 
-      prevIndex + 4 >= movies.length ? 0 : prevIndex + 4
+    setStartIndex((prevIndex) =>
+      prevIndex + 4 >= movies.length ? 0 : prevIndex + 4,
     );
   };
 
   const prevSlide = () => {
-    setStartIndex((prevIndex) => 
-      prevIndex - 4 < 0 ? Math.max(movies.length - 4, 0) : prevIndex - 4
+    setStartIndex((prevIndex) =>
+      prevIndex - 4 < 0 ? Math.max(movies.length - 4, 0) : prevIndex - 4,
     );
   };
 
@@ -57,17 +60,21 @@ const MovieCarousel = ({ title, movies }) => {
 const HomePage = () => {
   const [currentlyScreeningMovies, setCurrentlyScreeningMovies] = useState([]);
   const [comingSoonMovies, setComingSoonMovies] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMovies = async () => {
     setIsLoading(true);
     try {
       const moviesData = await getMovies();
-      setCurrentlyScreeningMovies(moviesData.filter(movie => movie.category === 'Currently Screening'));
-      setComingSoonMovies(moviesData.filter(movie => movie.category === 'Coming Soon'));
+      setCurrentlyScreeningMovies(
+        moviesData.filter((movie) => movie.category === "Currently Screening"),
+      );
+      setComingSoonMovies(
+        moviesData.filter((movie) => movie.category === "Coming Soon"),
+      );
     } catch (error) {
-      console.error('Error fetching movies:', error);
+      console.error("Error fetching movies:", error);
     }
     setIsLoading(false);
   };
@@ -76,11 +83,11 @@ const HomePage = () => {
     fetchMovies();
   }, []);
 
-  const filteredCurrentlyScreeningMovies = currentlyScreeningMovies.filter(movie =>
-    movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCurrentlyScreeningMovies = currentlyScreeningMovies.filter(
+    (movie) => movie.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-  const filteredComingSoonMovies = comingSoonMovies.filter(movie =>
-    movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredComingSoonMovies = comingSoonMovies.filter((movie) =>
+    movie.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (isLoading) {
@@ -95,8 +102,17 @@ const HomePage = () => {
     <div className="bg-gray-100 min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-center mb-12 text-gray-800">Cinema E-Booking</h1>
-        
+        <div className="header relative">
+          <h1 className="text-4xl font-bold text-center mb-12 text-gray-800">
+            Cinema E-Booking
+          </h1>
+          <button
+            type="submit"
+            className="absolute top-0 right-0 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            <Link href="/editprofile" >Edit Profile</Link>
+          </button>
+        </div>
         <div className="relative mb-12">
           <input
             type="text"
@@ -105,12 +121,18 @@ const HomePage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={20}
+          />
         </div>
 
         <AddMovie onMovieAdded={fetchMovies} />
 
-        <MovieCarousel title="Now Screening" movies={filteredCurrentlyScreeningMovies} />
+        <MovieCarousel
+          title="Now Screening"
+          movies={filteredCurrentlyScreeningMovies}
+        />
         <MovieCarousel title="Coming Soon" movies={filteredComingSoonMovies} />
       </div>
     </div>
