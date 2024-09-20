@@ -14,6 +14,7 @@ const BookingPage = () => {
   const [showDate, setShowDate] = useState('');
   const [numTickets, setNumTickets] = useState(0);
   const [ages, setAges] = useState<string[]>([]);
+  const [error, setError] = useState('');
 
   const handleNumTicketsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -30,6 +31,40 @@ const BookingPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission logic here
+  };
+
+  const validateForm = () => {
+    if (!showDate) {
+      setError('Please select a show date.');
+      return false;
+    }
+
+    const selectedDate = new Date(showDate);
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Set to start of the day
+
+    if (selectedDate < currentDate) {
+      setError('The selected date has already passed.');
+      return false;
+    }
+
+    if (!showTime) {
+      setError('Please select a show time.');
+      return false;
+    }
+
+    if (numTickets <= 0) {
+      setError('Please select at least one ticket.');
+      return false;
+    }
+
+    if (ages.some(age => age === '')) {
+      setError('Please specify the ages for all tickets.');
+      return false;
+    }
+
+    setError('');
+    return true;
   };
 
   return (
@@ -103,20 +138,29 @@ const BookingPage = () => {
               ))}
             </div>
           )}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           <div className="flex justify-center">
             <Link
               href={{
-                pathname: '/confirmation',
+                pathname: '/summary',
                 query: {
                   numTickets,
                   ages: JSON.stringify(ages),
                   showTime,
                   showDate,
                   trailerPictureUrl,
+                  title,
                 },
               }}
             >
-              <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+              <button
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                onClick={(e) => {
+                  if (!validateForm()) {
+                    e.preventDefault();
+                  }
+                }}
+              >
                 Proceed to Confirmation
               </button>
             </Link>
