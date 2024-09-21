@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { addMovie } from '../lib/firebase/firestore';
+import { useState } from "react";
+import { addMovie } from "../lib/firebase/firestore";
 
 interface AddMovieProps {
-  onMovieAdded: () => void;  // Callback to notify when a movie is added
+  onMovieAdded: () => void; // Callback to notify when a movie is added
 }
 
 const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [movieData, setMovieData] = useState({
-    title: '',
-    producer: '',
-    director: '',
-    synopsis: '',
-    trailerPictureUrl: '',
-    mpaaRating: '',
-    category: '',
-    trailerVideoUrl: '',
+    title: "",
+    producer: "",
+    director: "",
+    synopsis: "",
+    trailerPictureUrl: "",
+    mpaaRating: "",
+    category: "",
+    trailerVideoUrl: "",
   });
 
   const handleInputChange = (e) => {
@@ -28,22 +28,22 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
   const handleAddMovie = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await addMovie(movieData);  // Add the movie to Firestore
-      console.log('Movie successfully added!');
-      onMovieAdded();  // Notify parent to re-fetch movies
-      setIsFormOpen(false);  // Close the form after adding
+      await addMovie(movieData); // Add the movie to Firestore
+      console.log("Movie successfully added!");
+      onMovieAdded(); // Notify parent to re-fetch movies
+      setIsFormOpen(false); // Close the form after adding
       setMovieData({
-        title: '',
-        producer: '',
-        director: '',
-        synopsis: '',
-        trailerPictureUrl: '',
-        mpaaRating: '',
-        category: '',
-        trailerVideoUrl: '',
-      });  // Reset the form fields
+        title: "",
+        producer: "",
+        director: "",
+        synopsis: "",
+        trailerPictureUrl: "",
+        mpaaRating: "",
+        category: "",
+        trailerVideoUrl: "",
+      }); // Reset the form fields
     } catch (error) {
-      console.error('Error adding movie:', error);
+      console.error("Error adding movie:", error);
     }
   };
 
@@ -67,7 +67,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 value={movieData.title}
                 onChange={handleInputChange}
                 placeholder="Title"
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
               <input
@@ -76,7 +76,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 value={movieData.producer}
                 onChange={handleInputChange}
                 placeholder="Producer"
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
               <input
@@ -85,7 +85,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 value={movieData.director}
                 onChange={handleInputChange}
                 placeholder="Director"
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
               <textarea
@@ -93,7 +93,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 value={movieData.synopsis}
                 onChange={handleInputChange}
                 placeholder="Synopsis"
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
               <input
@@ -102,7 +102,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 value={movieData.trailerPictureUrl}
                 onChange={handleInputChange}
                 placeholder="Trailer Picture URL"
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
               />
               <input
                 type="text"
@@ -110,14 +110,14 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 value={movieData.mpaaRating}
                 onChange={handleInputChange}
                 placeholder="MPAA Rating"
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
               <select
                 name="category"
                 value={movieData.category}
                 onChange={handleInputChange}
-                className="mb-2 w-full p-2 border rounded"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               >
                 <option value="">Select Category</option>
