@@ -3,43 +3,42 @@
 import { useState, useEffect } from "react";
 import Navbar from "../../../components/Navbar";
 import Link from "next/link";
-import AddMovie from "../../../components/AddMovie";
-import EditMovie from "../../../components/EditMovie";
-import ScheduleMovie from "../../../components/ScheduleMovie";
-import { IMovie } from "../../../models/movie.model";
-import { deleteMovie, getMovies } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
+import AddUser from "../../../components/AddUser";
+import EditUser from "../../../components/EditUser";
+import { IUser } from "../../../models/user.model";
+import { deleteUser, getUsers } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
 
 const AdminPortalHomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [movies, setMovies] = useState<IMovie[]>([]);
+  const [users, setUsers] = useState<IUser[]>([]);
 
-  const fetchMovies = async () => {
+  const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const moviesData = await getMovies();
-      setMovies(moviesData);
+      const usersData = await getUsers();
+      setUsers(usersData);
     } catch (error) {
-      console.error("Error fetching movies:", error);
+      console.error("Error fetching users:", error);
     }
     setIsLoading(false);
   };
 
   const deleteCallback = async (id: string) => {
     console.log(
-      "%c🚨 Deleting movie with ID: " + id,
+      "%c🚨 Deleting user with ID: " + id,
       "color: red; font-size: 20px; font-weight: bold; background-color: yellow; padding: 10px;"
     );
     try {
-      await deleteMovie(id);
-      console.log("Deleting movie with id:", id);
-      await fetchMovies();
+      await deleteUser(id);
+      console.log("Deleting user with id:", id);
+      await fetchUsers();
     } catch (error) {
-      console.error("Error deleting movie:", error);
+      console.error("Error deleting user:", error);
     }
   };
 
   useEffect(() => {
-    fetchMovies();
+    fetchUsers();
   }, []);
 
   return (
@@ -48,25 +47,25 @@ const AdminPortalHomePage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
           <h1 className="text-2xl font-semibold mb-4 text-gray-800">
-            Manage Movies
+            Manage Users
           </h1>
           <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
             <thead className="bg-blue-100">
               <tr>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Title
+                  UserID
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Category
+                  First Name
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Director
+                  Last Name
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  MPAA Rating
+                  Email
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Producer
+                  User Type
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
                   Actions
@@ -74,33 +73,29 @@ const AdminPortalHomePage = () => {
               </tr>
             </thead>
             <tbody>
-              {movies.map((movie) => (
-                <tr key={movie.id} className="hover:bg-gray-50">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50">
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {movie.title}
+                    {user.userID}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {movie.category}
+                    {user.firstName}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {movie.director}
+                    {user.lastName}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {movie.mpaaRating}
+                    {user.email}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {movie.producer}
+                    {user.userType}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
                     <div className="flex space-x-2">
-                      <EditMovie movie={movie} onMovieUpdated={fetchMovies} />
-                      <ScheduleMovie
-                        movie={movie}
-                        onMovieUpdated={fetchMovies}
-                      />
+                      <EditUser user={user} onUserUpdated={fetchUsers} />
                       <button
                         className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                        onClick={() => deleteCallback(movie.id)}
+                        onClick={() => deleteCallback(user.id)}
                       >
                         Delete
                       </button>
@@ -114,7 +109,7 @@ const AdminPortalHomePage = () => {
             </tbody>
           </table>
           <div className="mt-4">
-            <AddMovie onMovieAdded={fetchMovies} />
+            <AddUser onUserAdded={fetchUsers} />
           </div>
         </div>
       </div>

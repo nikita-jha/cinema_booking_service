@@ -14,7 +14,7 @@ const AdminPortalHomePage = () => {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center max-w-md mx-auto">
           <Link href="/admin/manage-movies">
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
               Manage Movies
