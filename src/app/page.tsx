@@ -133,7 +133,9 @@ const HomePage = () => {
           title="Now Screening"
           movies={filteredCurrentlyScreeningMovies}
         />
-        <MovieCarousel title="Coming Soon" movies={filteredComingSoonMovies} />
+        <MovieCarousel 
+        title="Coming Soon" 
+        movies={filteredComingSoonMovies} />
       </div>
     </div>
   );
