@@ -6,6 +6,14 @@ export interface IMovie {
   producer: string;
   synopsis: string;
   title: string;
+  schedule: ISchedule[];
   trailerPictureUrl: string;
   trailerVideoUrl: string;
 }
+
+export interface ISchedule {
+  id: string;
+  time: string;
+  date: string;
+}
+

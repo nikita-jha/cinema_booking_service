@@ -1,7 +1,8 @@
 import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { IMovie } from '@/models/movie.model';
-
+import { IUser } from '@/models/user.model';
+import { IPromotion } from '@/models/promotion.model';
 export const getMovies = async (): Promise<IMovie[]> => {
   console.log('Fetching all movies from Firestore...');
   const moviesCollectionRef = collection(db, 'movies');
@@ -91,6 +92,92 @@ export const getMovieSchedules = async (movieId: string): Promise<any[]> => {
     return movieData.schedules || [];
   } catch (error) {
     console.error('Error fetching schedules:', error);
+    throw error;
+  }
+};
+
+export const getUsers = async (): Promise<IUser[]> => {
+  const usersCollectionRef = collection(db, 'users');
+  const usersSnapshot = await getDocs(usersCollectionRef);
+  const users: IUser[] = usersSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data() as Omit<IUser, 'id'>,
+  }));
+  return users;
+};
+
+export const deleteUser = async (id: string) => {
+  try {
+    const userDocRef = doc(db, 'users', id);
+    await deleteDoc(userDocRef);
+    console.log('User deleted with ID:', id);
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+};
+
+export const addUser = async (user: any) => {
+  try {
+    const docRef = await addDoc(collection(db, 'users'), user);
+    console.log('User added with ID:', docRef.id);
+    return docRef.id;
+  } catch (e) {
+    console.error('Error adding user: ', e);
+    throw e;
+  }
+};
+
+export const updateUser = async (id: string, user: IUser) => {
+  try {
+    const userDocRef = doc(db, 'users', id);
+    await updateDoc(userDocRef, user);
+    console.log('User updated with ID:', id);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+};
+
+export const getPromotions = async (): Promise<IPromotion[]> => {
+  const promotionsCollectionRef = collection(db, 'promotions');
+  const promotionsSnapshot = await getDocs(promotionsCollectionRef);
+  const promotions: IPromotion[] = promotionsSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data() as Omit<IPromotion, 'id'>,
+  }));
+  return promotions;
+};
+
+export const deletePromotion = async (id: string) => {
+  try {
+    const promotionDocRef = doc(db, 'promotions', id);
+    await deleteDoc(promotionDocRef);
+    console.log('Promotion deleted with ID:', id);
+  } catch (error) {
+    console.error('Error deleting promotion:', error);
+    throw error;
+  }
+};
+
+export const addPromotion = async (promotion: any) => {
+  try {
+    const docRef = await addDoc(collection(db, 'promotions'), promotion);
+    console.log('Promotion added with ID:', docRef.id);
+    return docRef.id;
+  } catch (e) {
+    console.error('Error adding promotion: ', e);
+    throw e;
+  }
+};
+
+export const updatePromotion = async (id: string, promotion: IPromotion) => {
+  try {
+    const promotionDocRef = doc(db, 'promotions', id);
+    await updateDoc(promotionDocRef, promotion);
+    console.log('Promotion updated with ID:', id);
+  } catch (error) {
+    console.error('Error updating promotion:', error);
     throw error;
   }
 };
