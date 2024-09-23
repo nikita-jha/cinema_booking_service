@@ -10,8 +10,12 @@ const BookingPage = () => {
   const title = searchParams.get("title");
   const trailerPictureUrl = searchParams.get("trailerPictureUrl");
   const trailerVideoUrl = searchParams.get("trailerVideoUrl"); // Add trailer video URL
-  const embedUrl = trailerVideoUrl.replace("watch?v=", "embed/");
 
+  // Convert YouTube video URL to embedded URL, null check
+  let embedUrl = "";
+  if (trailerVideoUrl) {
+    embedUrl = trailerVideoUrl.replace("watch?v=", "embed/");
+  }
   console.log("Trailer:", embedUrl)
 
   const [showTime, setShowTime] = useState("");
@@ -78,29 +82,29 @@ const BookingPage = () => {
         <h1 className="text-2xl font-bold mb-4 text-center">
           Buy Tickets for {title}
         </h1>
-        {trailerPictureUrl && (
-          <img
-            src={trailerPictureUrl}
-            alt={`${title} Trailer`}
-            className="w-full max-w-md max-h-96 mb-4 object-contain"
-          />
-        )}
-
-        {/* Embedded YouTube video */}
-        {embedUrl && (
-          <div className="mb-4 w-full max-w-md">
-            <iframe
-              width="100%"
-              height="315"
-              src={embedUrl}
-              title={`${title} Trailer`}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        )}
-
+        <div className="flex justify-center items-center mb-4 w-full max-w-2xl">
+          {trailerPictureUrl && (
+            <img
+              src={trailerPictureUrl}
+              alt={`${title} Trailer`}
+              className="w-1/2 max-h-96 object-contain"
+            />
+          )}
+          {/* Embedded YouTube video */}
+          {embedUrl && (
+            <div className="w-1/2 ml-4">
+              <iframe
+                width="150%"
+                height="384"
+                src={embedUrl}
+                title={`${title} Trailer`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          )}
+        </div>
         <div className="mb-4 w-full max-w-md">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -183,6 +187,7 @@ const BookingPage = () => {
                   showTime,
                   showDate,
                   trailerPictureUrl,
+                  trailerVideoUrl,
                   title,
                 },
               }}
