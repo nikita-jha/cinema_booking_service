@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import Navbar from "../../../components/Navbar";
 import Link from "next/link";
 import AddMovie from "../../../components/AddMovie";
-import { getMovies } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
+import EditMovie from "../../../components/EditMovie"
+import { IMovie } from "../../../models/movie.model";
+import { deleteMovie, getMovies } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
 
 const AdminPortalHomePage = () => {
-  const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [movies, setMovies] = useState<IMovie[]>([]);
 
   const fetchMovies = async () => {
     setIsLoading(true);
@@ -21,6 +23,20 @@ const AdminPortalHomePage = () => {
     setIsLoading(false);
   };
 
+  const deleteCallback = async (id: string) => {
+    console.log(
+      "%c🚨 Deleting movie with ID: " + id,
+      "color: red; font-size: 20px; font-weight: bold; background-color: yellow; padding: 10px;"
+    );
+    try {
+      await deleteMovie(id);
+      console.log("Deleting movie with id:", id);
+      await fetchMovies();
+    } catch (error) {
+      console.error("Error deleting movie:", error);
+    }
+  };
+
   useEffect(() => {
     fetchMovies();
   }, []);
@@ -30,30 +46,76 @@ const AdminPortalHomePage = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="header relative">
-          <h1 className="text-4xl font-bold text-center mb-24 text-gray-800">
-            Admin Dashboard
+          <h1 className="text-4xl font-bold text-center mb-24 text-black">
+            Manage Movies
           </h1>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-          {/* Add Movie Button with fetchMovies */}
-          <div>
+        <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
+          <h1 className="text-2xl font-semibold mb-4 text-gray-800">
+            Manage Movies
+          </h1>
+          <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
+            <thead className="bg-blue-100">
+              <tr>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Title
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Category
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Director
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  MPAA Rating
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Producer
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {movies.map((movie) => (
+                <tr key={movie.id} className="hover:bg-gray-50">
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {movie.title}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {movie.category}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {movie.director}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {movie.mpaaRating}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {movie.producer}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    <div className="flex space-x-2">
+                      <EditMovie movie={movie} onMovieUpdated={fetchMovies} />
+                      <button
+                        className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-700"
+                        onClick={() => deleteCallback(movie.id)}
+                      >
+                        Delete
+                      </button>
+                      <button className="text-red-500 hover:text-red-700">
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-4">
             <AddMovie onMovieAdded={fetchMovies} />
           </div>
-
-          {/* Edit Movies Button */}
-          <Link href="/admin/manage-users">
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-              Edit Movies
-            </button>
-          </Link>
-
-          {/* Manage Promotions Button */}
-          <Link href="/admin/manage-promotions">
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-              Manage Promotions
-            </button>
-          </Link>
         </div>
       </div>
     </div>
