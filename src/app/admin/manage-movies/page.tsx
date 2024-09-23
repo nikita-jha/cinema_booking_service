@@ -5,6 +5,7 @@ import Navbar from "../../../components/Navbar";
 import Link from "next/link";
 import AddMovie from "../../../components/AddMovie";
 import EditMovie from "../../../components/EditMovie"
+import ScheduleMovie from "../../../components/ScheduleMovie"
 import { IMovie } from "../../../models/movie.model";
 import { deleteMovie, getMovies } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
 
@@ -45,11 +46,6 @@ const AdminPortalHomePage = () => {
     <div className="bg-gray-100 min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="header relative">
-          <h1 className="text-4xl font-bold text-center mb-24 text-black">
-            Manage Movies
-          </h1>
-        </div>
         <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
           <h1 className="text-2xl font-semibold mb-4 text-gray-800">
             Manage Movies
@@ -98,8 +94,12 @@ const AdminPortalHomePage = () => {
                   <td className="py-2 px-4 border-b text-gray-800">
                     <div className="flex space-x-2">
                       <EditMovie movie={movie} onMovieUpdated={fetchMovies} />
+                      <ScheduleMovie
+                        movie={movie}
+                        onMovieUpdated={fetchMovies}
+                      />
                       <button
-                        className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-700"
+                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                         onClick={() => deleteCallback(movie.id)}
                       >
                         Delete

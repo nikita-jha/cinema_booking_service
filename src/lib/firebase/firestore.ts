@@ -1,4 +1,4 @@
-import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { IMovie } from '@/models/movie.model';
 
@@ -51,3 +51,47 @@ export const updateMovie = async (id: string, movie: IMovie) => {
     throw error;
   }
 };
+
+export const addMovieSchedule = async (movieId: string, schedule: any) => {
+  try {
+    const movieDocRef = doc(db, 'movies', movieId);
+    const movieDoc = await getDoc(movieDocRef);
+
+    if (!movieDoc.exists()) {
+      console.error('Movie does not exist');  
+      return;
+    }
+
+    const movieData = movieDoc.data();
+    if (!movieData.schedules) {
+      movieData.schedules = [];
+    }
+
+    movieData.schedules.push(schedule);
+
+    await updateDoc(movieDocRef, movieData);
+    console.log('Schedule added to movie with ID:', movieId);
+  } catch (error) {
+    console.error('Error adding schedule:', error);
+    throw error;
+  }
+};
+
+export const getMovieSchedules = async (movieId: string): Promise<any[]> => {
+  try {
+    const movieDocRef = doc(db, 'movies', movieId);
+    const movieDoc = await getDoc(movieDocRef);
+
+    if (!movieDoc.exists()) {
+      console.error('Movie does not exist');
+      return [];
+    }
+
+    const movieData = movieDoc.data();
+    return movieData.schedules || [];
+  } catch (error) {
+    console.error('Error fetching schedules:', error);
+    throw error;
+  }
+};
+
