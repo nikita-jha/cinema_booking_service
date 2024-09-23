@@ -18,19 +18,20 @@ const OrderSummaryPage = () => {
   const showDate = searchParams.get('showDate');
   const trailerPictureUrl = searchParams.get('trailerPictureUrl');
   const title = searchParams.get('title');
+  const trailerVideoUrl = searchParams.get('trailerVideoUrl'); 
 
   const [ticketList, setTicketList] = useState<string[]>([]);
   const [totalTickets, setTotalTickets] = useState<number>(0);
   const [selectedShowTime, setSelectedShowTime] = useState<string>('');
   const [selectedShowDate, setSelectedShowDate] = useState<string>('');
-  const [trailerUrl, setTrailerUrl] = useState<string>('');
+  const [trailerImageUrl, setTrailerImageUrl] = useState<string>('');
 
   useEffect(() => {
     if (numTickets) setTotalTickets(parseInt(numTickets, 10));
     if (ages) setTicketList(JSON.parse(ages));
     if (showTime) setSelectedShowTime(showTime);
     if (showDate) setSelectedShowDate(showDate);
-    if (trailerPictureUrl) setTrailerUrl(trailerPictureUrl);
+    if (trailerPictureUrl) setTrailerImageUrl(trailerPictureUrl);
   }, [numTickets, ages, showTime, showDate, trailerPictureUrl]);
 
   const handleDeleteTicket = (index: number) => {
@@ -76,6 +77,7 @@ const OrderSummaryPage = () => {
             query: {
               title,
               trailerPictureUrl,
+              trailerVideoUrl
             },
           }}
         >
@@ -85,10 +87,10 @@ const OrderSummaryPage = () => {
         </Link>
         <h1 className="text-2xl font-bold mb-4 text-center">Order Summary</h1>
         <div className="flex">
-          {trailerUrl && (
+          {trailerImageUrl && (
             <div className="w-1/2 p-4">
               <img
-                src={trailerUrl}
+                src={trailerImageUrl}
                 alt="Trailer"
                 className="w-full max-w-md max-h-96 mb-4 object-contain"
               />
