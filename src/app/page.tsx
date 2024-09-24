@@ -127,7 +127,6 @@ const HomePage = () => {
           />
         </div>
 
-        <AddMovie onMovieAdded={fetchMovies} />
 
         <MovieCarousel
           title="Now Screening"
