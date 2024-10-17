@@ -1,13 +1,63 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from '../../components/Navbar';
 
 const RegisterPage = () => {
     const [activeTab, setActiveTab] = useState("personal");
+    const [formData, setFormData] = useState({
+        email: "",
+        firstName: "",
+        lastName: "",
+        password: "",
+        phone: "",
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        promotionalEmails: false,
+    });
+    const [isFormValid, setIsFormValid] = useState(false);
+
+    useEffect(() => {
+        validateForm();
+    }, [formData]);
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: type === "checkbox" ? checked : value,
+        }));
+    };
+
+    const validateForm = () => {
+        const { email, firstName, lastName, password, phone } = formData;
+        const isValid = email && firstName && lastName && password && phone;
+        setIsFormValid(isValid);
+    };
+
+    const handleNext = (e) => {
+        e.preventDefault();
+        if (isFormValid) {
+            if (activeTab === "personal") {
+                setActiveTab("payment");
+            } else if (activeTab === "payment") {
+                setActiveTab("address");
+            }
+        }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (isFormValid) {
+            // Handle form submission logic here
+            console.log("Form submitted:", formData);
+        }
     };
 
     const containerStyle = {
@@ -80,15 +130,26 @@ const RegisterPage = () => {
         boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)',
     };
 
-    const submitButtonStyle = {
+    const nextButtonStyle = {
         width: '100%',
         padding: '12px',
-        backgroundColor: '#4a90e2',
+        backgroundColor: isFormValid ? '#4a90e2' : '#ccc',
         color: '#fff',
         border: 'none',
         borderRadius: '4px',
         fontSize: '16px',
-        cursor: 'pointer',
+        cursor: isFormValid ? 'pointer' : 'not-allowed',
+    };
+
+    const submitButtonStyle = {
+        width: '100%',
+        padding: '12px',
+        backgroundColor: isFormValid ? '#4a90e2' : '#ccc',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '4px',
+        fontSize: '16px',
+        cursor: isFormValid ? 'pointer' : 'not-allowed',
     };
 
     const addressStyle = {
@@ -101,113 +162,204 @@ const RegisterPage = () => {
         <div>
             <Navbar />
             <div style={containerStyle}>
-            <h1 style={headerStyle}>Register</h1>
+                <h1 style={headerStyle}>Register</h1>
 
-            {/* Navigation bar for the Register form */}
-            <div style={navigationStyle}>
-                <button
-                    style={buttonStyle(activeTab === "personal")}
-                    onClick={() => handleTabClick("personal")}
-                >
-                    Personal Info
-                </button>
-                <button
-                    style={buttonStyle(activeTab === "payment")}
-                    onClick={() => handleTabClick("payment")}
-                >
-                    Payment Info
-                </button>
-                <button
-                    style={buttonStyle(activeTab === "address")}
-                    onClick={() => handleTabClick("address")}
-                >
-                    Home Address
-                </button>
-            </div>
+                {/* Navigation bar for the Register form */}
+                <div style={navigationStyle}>
+                    <button
+                        style={buttonStyle(activeTab === "personal")}
+                        onClick={() => handleTabClick("personal")}
+                    >
+                        Personal Info
+                    </button>
+                    <button
+                        style={buttonStyle(activeTab === "payment")}
+                        onClick={() => handleTabClick("payment")}
+                    >
+                        Payment Info
+                    </button>
+                    <button
+                        style={buttonStyle(activeTab === "address")}
+                        onClick={() => handleTabClick("address")}
+                    >
+                        Home Address
+                    </button>
+                </div>
 
-            {/* Fields for each page on Register */}
-            <form style={formStyle}>
-                {activeTab === "personal" && (
-                    <div>
-                        <h2>Personal Information</h2>
-                        <label style={labelStyle} htmlFor="email">Email Address: *</label>
-                        <input style={inputStyle} type="email" id="email" name="email" placeholder="Enter your email" required />
+                {/* Fields for each page on Register */}
+                <form style={formStyle} onSubmit={handleSubmit}>
+                    {activeTab === "personal" && (
+                        <div>
+                            <h2>Personal Information</h2>
+                            <label style={labelStyle} htmlFor="email">Email Address: *</label>
+                            <input
+                                style={inputStyle}
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="Enter your email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                required
+                            />
 
-                        <label style={labelStyle} htmlFor="name">First Name: *</label>
-                        <input style={inputStyle} type="text" id="name" name="name" placeholder="Enter your first name" required />
+                            <label style={labelStyle} htmlFor="firstName">First Name: *</label>
+                            <input
+                                style={inputStyle}
+                                type="text"
+                                id="firstName"
+                                name="firstName"
+                                placeholder="Enter your first name"
+                                value={formData.firstName}
+                                onChange={handleInputChange}
+                                required
+                            />
 
-                        <label style={labelStyle} htmlFor="name">Last Name: *</label>
-                        <input style={inputStyle} type="text" id="name" name="name" placeholder="Enter your last name" required />
+                            <label style={labelStyle} htmlFor="lastName">Last Name: *</label>
+                            <input
+                                style={inputStyle}
+                                type="text"
+                                id="lastName"
+                                name="lastName"
+                                placeholder="Enter your last name"
+                                value={formData.lastName}
+                                onChange={handleInputChange}
+                                required
+                            />
 
-                        <label style={labelStyle} htmlFor="password">Password: *</label>
-                        <input style={inputStyle} type="password" id="password" name="password" placeholder="Enter your password" required />
+                            <label style={labelStyle} htmlFor="password">Password: *</label>
+                            <input
+                                style={inputStyle}
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                required
+                            />
 
-                        <label style={labelStyle} htmlFor="phone">Phone Number: *</label>
-                        <input style={inputStyle} type="text" id="phone" name="phone" placeholder="Enter your phone number" required />
-                    </div>
-                )}
+                            <label style={labelStyle} htmlFor="phone">Phone Number: *</label>
+                            <input
+                                style={inputStyle}
+                                type="text"
+                                id="phone"
+                                name="phone"
+                                placeholder="Enter your phone number"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <button type="button" style={nextButtonStyle} onClick={handleNext} disabled={!isFormValid}>Next</button>
+                        </div>
+                    )}
 
-                {activeTab === "payment" && (
-                    <div>
-                        <h2>Payment Information (Optional)</h2>
-                        <div style={cardContainerStyle}>
-                            {["Card 1", "Card 2", "Card 3"].map((cardLabel) => (
-                                <div key={cardLabel} style={cardStyle}>
-                                    <h3>{cardLabel}:</h3>
-                                    <label style={labelStyle} htmlFor="cardType">Card Type:</label>
-                                    <select style={inputStyle} id="cardType" name="cardType">
-                                        <option value="">Select Card Type</option>
-                                        <option value="visa">Visa</option>
-                                        <option value="mastercard">MasterCard</option>
-                                        <option value="amex">American Express</option>
-                                    </select>
+                    {activeTab === "payment" && (
+                        <div>
+                            <h2>Payment Information (Optional)</h2>
+                            <div style={cardContainerStyle}>
+                                {["Card 1", "Card 2", "Card 3"].map((cardLabel) => (
+                                    <div key={cardLabel} style={cardStyle}>
+                                        <h3>{cardLabel}:</h3>
+                                        <label style={labelStyle} htmlFor="cardType">Card Type:</label>
+                                        <select style={inputStyle} id="cardType" name="cardType">
+                                            <option value="">Select Card Type</option>
+                                            <option value="visa">Visa</option>
+                                            <option value="mastercard">MasterCard</option>
+                                            <option value="amex">American Express</option>
+                                        </select>
 
-                                    <label style={labelStyle} htmlFor="cardName">Card Name:</label>
-                                    <input style={inputStyle} type="text" id="cardName" name="cardName" placeholder="Enter the full name on your card" />
+                                        <label style={labelStyle} htmlFor="cardName">Card Name:</label>
+                                        <input style={inputStyle} type="text" id="cardName" name="cardName" placeholder="Enter the full name on your card" />
 
-                                    <label style={labelStyle} htmlFor="cardNumber">Card Number:</label>
-                                    <input style={inputStyle} type="text" id="cardNumber" name="cardNumber" placeholder="Enter the card number" />
+                                        <label style={labelStyle} htmlFor="cardNumber">Card Number:</label>
+                                        <input style={inputStyle} type="text" id="cardNumber" name="cardNumber" placeholder="Enter the card number" />
 
-                                    <label style={labelStyle} htmlFor="expiryDate">Expiration Date:</label>
-                                    <input style={inputStyle} type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY" />
+                                        <label style={labelStyle} htmlFor="expiryDate">Expiration Date:</label>
+                                        <input style={inputStyle} type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY" />
 
-                                    <label style={labelStyle} htmlFor="billingAddress">Billing Address:</label>
-                                    <input style={inputStyle} type="text" id="billingAddress" name="billingAddress" placeholder="Enter your billing address" />
+                                        <label style={labelStyle} htmlFor="billingAddress">Billing Address:</label>
+                                        <input style={inputStyle} type="text" id="billingAddress" name="billingAddress" placeholder="Enter your billing address" />
+                                    </div>
+                                ))}
+                            </div>
+                            <button type="button" style={nextButtonStyle} onClick={handleNext}>Next</button>
+                        </div>
+                    )}
+
+                    {activeTab === "address" && (
+                        <div>
+                            <h2>Home Address (Optional)</h2>
+                            <div style={addressStyle}>
+                                <div>
+                                    <label style={labelStyle} htmlFor="street">Street:</label>
+                                    <input
+                                        style={inputStyle}
+                                        type="text"
+                                        id="street"
+                                        name="street"
+                                        placeholder="Enter your street address"
+                                        value={formData.street}
+                                        onChange={handleInputChange}
+                                    />
                                 </div>
-                            ))}
+
+                                <div>
+                                    <label style={labelStyle} htmlFor="city">City:</label>
+                                    <input
+                                        style={inputStyle}
+                                        type="text"
+                                        id="city"
+                                        name="city"
+                                        placeholder="Enter your city"
+                                        value={formData.city}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={labelStyle} htmlFor="state">State:</label>
+                                    <input
+                                        style={inputStyle}
+                                        type="text"
+                                        id="state"
+                                        name="state"
+                                        placeholder="Enter your state"
+                                        value={formData.state}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={labelStyle} htmlFor="zip">ZIP Code:</label>
+                                    <input
+                                        style={inputStyle}
+                                        type="text"
+                                        id="zip"
+                                        name="zip"
+                                        placeholder="Enter your zip code"
+                                        value={formData.zip}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+                            </div>
+                            <div style={{ marginTop: '20px' }}>
+                                <label style={labelStyle} htmlFor="promotionalEmails">
+                                    <input
+                                        type="checkbox"
+                                        id="promotionalEmails"
+                                        name="promotionalEmails"
+                                        checked={formData.promotionalEmails}
+                                        onChange={handleInputChange}
+                                    />
+                                    <span style={{ marginLeft: '8px' }}>Sign up for promotional emails</span>
+                                </label>
+                            </div>
+                            <button type="submit" style={submitButtonStyle} disabled={!isFormValid}>Submit</button>
                         </div>
-                    </div>
-                )}
-
-                {activeTab === "address" && (
-                    <div>
-                        <h2>Home Address (Optional)</h2>
-                        <div style={addressStyle}>
-                            <div>
-                                <label style={labelStyle} htmlFor="street">Street:</label>
-                                <input style={inputStyle} type="text" id="street" name="street" placeholder="Enter your street address" />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle} htmlFor="city">City:</label>
-                                <input style={inputStyle} type="text" id="city" name="city" placeholder="Enter your city" />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle} htmlFor="state">State:</label>
-                                <input style={inputStyle} type="text" id="state" name="state" placeholder="Enter your state" />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle} htmlFor="zip">ZIP Code:</label>
-                                <input style={inputStyle} type="text" id="zip" name="zip" placeholder="Enter your zip code" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </form>
-            <button type="submit" style={submitButtonStyle}>Submit</button>
-        </div>
+                    )}
+                </form>
+            </div>
         </div>
     );
 };
