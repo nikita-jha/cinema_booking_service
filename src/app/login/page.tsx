@@ -1,7 +1,28 @@
+"use client";
+
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
+import {useState } from 'react';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 const LoginPage = () => {
+    const [email, setEmail] = useState('');
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            alert("Please enter your email first.");
+            return;
+        }
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert("Password reset email sent! Check your inbox.")
+        } catch (error) {
+            console.error("Error sending password reset email:", error);
+        }
+    };
+    
     return (
         <div>
             <Navbar/>
@@ -21,6 +42,8 @@ const LoginPage = () => {
                                     placeholder="Enter your username"
                                     required
                                     className="mt-2 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-lg"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                 />
                             </div>
                             <div>
@@ -46,7 +69,7 @@ const LoginPage = () => {
                         </form>
                         <div className="mt-6 flex justify-between text-lg text-blue-500">
                             <Link href="/register" className="hover:underline">Create Account</Link>
-                            <a href="#" className="hover:underline">
+                            <a href="#" className="hover:underline" onClick={handleForgotPassword}>
                                 Forgot Password?
                             </a>
                         </div>
