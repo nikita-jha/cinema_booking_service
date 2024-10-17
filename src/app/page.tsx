@@ -7,7 +7,9 @@ import AddMovie from "../components/AddMovie";
 import Navbar from "../components/Navbar";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from 'next/link';
-
+import { auth } from '../../lib/firebase/firebaseConfig'; // Firebase Auth
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { db } from '../../lib/firebase/firebaseConfig'; // Firestore
 
 
 const MovieCarousel = ({ title, movies }) => {

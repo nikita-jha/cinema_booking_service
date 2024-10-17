@@ -1,8 +1,46 @@
-import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore'; // Ensure setDoc is imported
 import { db } from './config';
+import { auth } from './config'; // Add Firebase Auth import
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'; // Import auth functions
 import { IMovie } from '@/models/movie.model';
 import { IUser } from '@/models/user.model';
 import { IPromotion } from '@/models/promotion.model';
+
+
+// Function to create a new user in Firebase Authentication and Firestore
+export const registerUser = async (userData: IUser) => {
+  const { email, password, firstName, lastName, phone, street, city, state, zip, promotionalEmails } = userData;
+
+  try {
+    // Step 1: Create user in Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Step 2: Add user data to Firestore
+    await setDoc(doc(db, 'users', user.uid), {
+      email,
+      firstName,
+      lastName,
+      phone,
+      address: {
+        street,
+        city,
+        state,
+        zip,
+      },
+      promotionalEmails,
+    });
+
+    // Step 3: Send email verification
+    await sendEmailVerification(user);
+    console.log(`User created with ID: ${user.uid}, verification email sent.`);
+
+  } catch (error) {
+    console.error('Error during user registration:', error);
+    throw error;
+  }
+};
+
 export const getMovies = async (): Promise<IMovie[]> => {
   console.log('Fetching all movies from Firestore...');
   const moviesCollectionRef = collection(db, 'movies');
