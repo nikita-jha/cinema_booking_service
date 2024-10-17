@@ -77,6 +77,8 @@ const RegisterPage: React.FC = () => {
       case "password":
         if (!/(?=.*[0-9])(?=.*[a-zA-Z])/.test(value)) {
           message = "Password should contain letters and at least one number.";
+        } else if (value.length < 6) {            
+          message = "Password should be at least 6 characters long.";
         }
         break;
       case "zip":
