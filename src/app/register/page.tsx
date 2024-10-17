@@ -24,6 +24,21 @@ const router = useRouter(); // Initialize the router
     zip: "",
     promotionalEmails: false,
   });
+  const [cardData, setCardData] = useState([
+    { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
+    { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
+    { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
+  ]);
+  const [validationMessages, setValidationMessages] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    cardNumber: "",
+    expirationDate: "",
+    cvv: "",
+  });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // New state for submission status
 
@@ -31,7 +46,7 @@ const router = useRouter(); // Initialize the router
 
   useEffect(() => {
     validateForm();
-  }, [formData]);
+  }, [formData, cardData]);
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
@@ -42,6 +57,101 @@ const router = useRouter(); // Initialize the router
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
+    }));
+    validateField(name, value);
+  };
+
+  const handleCardInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const updatedCardData = [...cardData];
+    updatedCardData[index] = { ...updatedCardData[index], [name]: value };
+    setCardData(updatedCardData);
+    validateCardField(index, name, value);
+  };
+
+  const validateField = (name: string, value: string) => {
+    let message = "";
+    switch (name) {
+      case "firstName":
+      case "lastName":
+        if (!/^[a-zA-Z]+$/.test(value)) {
+          message = "Only letters are allowed.";
+        }
+        break;
+      case "email":
+        if (!/@/.test(value)) {
+          message = "Email should contain the @ sign.";
+        }
+        break;
+      case "password":
+        if (!/(?=.*[0-9])(?=.*[a-zA-Z])/.test(value)) {
+          message = "Password should contain letters and at least one number.";
+        } else if (value.length < 6) {            
+          message = "Password should be at least 6 characters long.";
+        }
+        break;
+      case "zip":
+        if (!/^\d{5}$/.test(value)) {
+          message = "ZIP code should be exactly 5 digits.";
+        }
+          break;
+      case "phone":
+        if (!/^\d{10}$/.test(value)) {
+          message = "Phone number should be exactly 10 digits.";
+        }
+        break;
+      default:
+        break;
+    }
+    setValidationMessages((prevMessages) => ({
+      ...prevMessages,
+      [name]: message,
+    }));
+  };
+
+  const validateCardField = (index: number, name: string, value: string) => {
+    let message = "";
+    switch (name) {
+      case "cardNumber":
+        if (cardData[index].cardType === "visa" || cardData[index].cardType === "mastercard") {
+          if (!/^\d{16}$/.test(value)) {
+            message = "Card number should have 16 digits.";
+          }
+        } else if (cardData[index].cardType === "amex") {
+          if (!/^\d{15}$/.test(value)) {
+            message = "Card number should have 15 digits.";
+          }
+        }
+        break;
+      case "expirationDate":
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(value)) {
+          message = "Expiration date should be in MM/YY format.";
+        } else {
+          const [month, year] = value.split("/").map(Number);
+          const currentDate = new Date();
+          const expirationDate = new Date(`20${year}`, month - 1);
+          if (expirationDate <= currentDate) {
+            message = "Expiration date should be in the future.";
+          }
+        }
+        break;
+      case "cvv":
+        if (cardData[index].cardType === "visa" || cardData[index].cardType === "mastercard") {
+          if (!/^\d{3}$/.test(value)) {
+            message = "CVV should have 3 digits.";
+          }
+        } else if (cardData[index].cardType === "amex") {
+          if (!/^\d{4}$/.test(value)) {
+            message = "CVV should have 4 digits.";
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    setValidationMessages((prevMessages) => ({
+      ...prevMessages,
+      [`card${index}_${name}`]: message,
     }));
   };
 
@@ -57,7 +167,7 @@ const router = useRouter(); // Initialize the router
 
     // Call registerUser from firestore.ts and pass formData
     try {
-        await registerUser(formData);
+        await registerUser({ ...formData, cardData });
         console.log('User registered successfully!');
         router.push('/confirmregister');
       } catch (error) {
@@ -70,7 +180,10 @@ const router = useRouter(); // Initialize the router
 
   const validateForm = () => {
     const { email, firstName, lastName, password, phone } = formData;
-    const isValid = email && firstName && lastName && password && phone;
+    const isValid = email && firstName && lastName && password && phone &&
+      !validationMessages.email && !validationMessages.firstName &&
+      !validationMessages.lastName && !validationMessages.password &&
+      !validationMessages.phone;
     setIsFormValid(isValid);
   };
 
@@ -228,6 +341,7 @@ const router = useRouter(); // Initialize the router
                 onChange={handleInputChange}
                 required
               />
+              {validationMessages.email && <p className="text-red-500 text-sm mt-1">{validationMessages.email}</p>}
 
               <label style={labelStyle} htmlFor="firstName">First Name: *</label>
               <input
@@ -240,6 +354,7 @@ const router = useRouter(); // Initialize the router
                 onChange={handleInputChange}
                 required
               />
+              {validationMessages.firstName && <p className="text-red-500 text-sm mt-1">{validationMessages.firstName}</p>}
 
               <label style={labelStyle} htmlFor="lastName">Last Name: *</label>
               <input
@@ -252,6 +367,7 @@ const router = useRouter(); // Initialize the router
                 onChange={handleInputChange}
                 required
               />
+              {validationMessages.lastName && <p className="text-red-500 text-sm mt-1">{validationMessages.lastName}</p>}
 
               <label style={labelStyle} htmlFor="password">Password: *</label>
               <input
@@ -264,6 +380,7 @@ const router = useRouter(); // Initialize the router
                 onChange={handleInputChange}
                 required
               />
+              {validationMessages.password && <p className="text-red-500 text-sm mt-1">{validationMessages.password}</p>}
 
               <label style={labelStyle} htmlFor="phone">Phone Number: *</label>
               <input
@@ -276,6 +393,8 @@ const router = useRouter(); // Initialize the router
                 onChange={handleInputChange}
                 required
               />
+              {validationMessages.phone && <p className="text-red-500 text-sm mt-1">{validationMessages.phone}</p>}
+
               <button type="button" style={nextButtonStyle} onClick={handleNext} disabled={!isFormValid}>
                 Next
               </button>
@@ -286,28 +405,67 @@ const router = useRouter(); // Initialize the router
             <div>
               <h2>Payment Information (Optional)</h2>
               <div style={cardContainerStyle}>
-                {["Card 1", "Card 2", "Card 3"].map((cardLabel) => (
-                  <div key={cardLabel} style={cardStyle}>
-                    <h3>{cardLabel}:</h3>
-                    <label style={labelStyle} htmlFor="cardType">Card Type:</label>
-                    <select style={inputStyle} id="cardType" name="cardType">
+                {cardData.map((card, index) => (
+                  <div key={index} style={cardStyle}>
+                    <h3>Card {index + 1}:</h3>
+                    <label style={labelStyle} htmlFor={`cardType${index}`}>Card Type:</label>
+                    <select
+                      style={inputStyle}
+                      id={`cardType${index}`}
+                      name="cardType"
+                      value={card.cardType}
+                      onChange={(e) => handleCardInputChange(index, e)}
+                    >
                       <option value="">Select Card Type</option>
                       <option value="visa">Visa</option>
                       <option value="mastercard">MasterCard</option>
                       <option value="amex">American Express</option>
                     </select>
 
-                    <label style={labelStyle} htmlFor="cardName">Card Name:</label>
-                    <input style={inputStyle} type="text" id="cardName" name="cardName" placeholder="Enter the full name on your card" />
+                    <label style={labelStyle} htmlFor={`cardNumber${index}`}>Card Number:</label>
+                    <input
+                      style={inputStyle}
+                      type="text"
+                      id={`cardNumber${index}`}
+                      name="cardNumber"
+                      placeholder="Enter the card number"
+                      value={card.cardNumber}
+                      onChange={(e) => handleCardInputChange(index, e)}
+                    />
+                    {validationMessages[`card${index}_cardNumber`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_cardNumber`]}</p>}
 
-                    <label style={labelStyle} htmlFor="cardNumber">Card Number:</label>
-                    <input style={inputStyle} type="text" id="cardNumber" name="cardNumber" placeholder="Enter the card number" />
+                    <label style={labelStyle} htmlFor={`expirationDate${index}`}>Expiration Date:</label>
+                    <input
+                      style={inputStyle}
+                      type="text"
+                      id={`expirationDate${index}`}
+                      name="expirationDate"
+                      placeholder="MM/YY"
+                      value={card.expirationDate}
+                      onChange={(e) => handleCardInputChange(index, e)}
+                    />
+                    {validationMessages[`card${index}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_expirationDate`]}</p>}
 
-                    <label style={labelStyle} htmlFor="expiryDate">Expiration Date:</label>
-                    <input style={inputStyle} type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY" />
+                    <label style={labelStyle} htmlFor={`cvv${index}`}>CVV:</label>
+                    <input
+                      style={inputStyle}
+                      type="text"
+                      id={`cvv${index}`}
+                      name="cvv"
+                      placeholder="Enter CVV"
+                      value={card.cvv}
+                      onChange={(e) => handleCardInputChange(index, e)}
+                    />
+                    {validationMessages[`card${index}_cvv`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_cvv`]}</p>}
 
-                    <label style={labelStyle} htmlFor="billingAddress">Billing Address:</label>
-                    <input style={inputStyle} type="text" id="billingAddress" name="billingAddress" placeholder="Enter your billing address" />
+                    <label style={labelStyle} htmlFor={`billingAddress${index}`}>Billing Address:</label>
+                    <input
+                      style={inputStyle}
+                      type="text"
+                      id={`billingAddress${index}`}
+                      name="billingAddress"
+                      placeholder="Enter your billing address"
+                    />
                   </div>
                 ))}
               </div>
@@ -349,15 +507,24 @@ const router = useRouter(); // Initialize the router
 
                 <div>
                   <label style={labelStyle} htmlFor="state">State:</label>
-                  <input
+                  <select
                     style={inputStyle}
-                    type="text"
                     id="state"
                     name="state"
-                    placeholder="Enter your state"
                     value={formData.state}
                     onChange={handleInputChange}
-                  />
+                  >
+                    <option value="">Select State</option>
+                    {[
+                      "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+                      "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+                      "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+                      "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+                      "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+                    ].map((state) => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -371,6 +538,7 @@ const router = useRouter(); // Initialize the router
                     value={formData.zip}
                     onChange={handleInputChange}
                   />
+                  {validationMessages.zip && <p className="text-red-500 text-sm mt-1">{validationMessages.zip}</p>}
                 </div>
               </div>
               <div style={{ marginTop: '20px' }}>
