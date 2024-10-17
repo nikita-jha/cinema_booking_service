@@ -3,8 +3,14 @@
 import React, { useState, useEffect } from "react";
 import Navbar from '../../components/Navbar';
 import { registerUser } from '../../lib/firebase/firestore'; // Import the registration function
+import { useRouter } from 'next/navigation'; // Import useRouter
+import { auth } from '../../lib/firebase/config'; // Firebase authentication
+import { Button } from '@mui/material';
+
 
 const RegisterPage: React.FC = () => {
+const router = useRouter(); // Initialize the router
+
   const [activeTab, setActiveTab] = useState("personal");
   const [formData, setFormData] = useState({
     email: "",
@@ -19,6 +25,9 @@ const RegisterPage: React.FC = () => {
     promotionalEmails: false,
   });
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state for submission status
+
+
 
   useEffect(() => {
     validateForm();
@@ -44,14 +53,19 @@ const RegisterPage: React.FC = () => {
       console.log('Form is not valid');
       return;
     }
+    setIsSubmitting(true);
 
     // Call registerUser from firestore.ts and pass formData
     try {
-      await registerUser(formData);
-      console.log('User registered successfully!');
-    } catch (error) {
-      console.error('Error registering user:', error);
-    }
+        await registerUser(formData);
+        console.log('User registered successfully!');
+        router.push('/confirmregister');
+      } catch (error) {
+        console.error('Error registering user:', error);
+      } finally {
+        // Ensure that isSubmitting is reset to false after submission
+        setIsSubmitting(false);
+      }
   };
 
   const validateForm = () => {
@@ -155,14 +169,15 @@ const RegisterPage: React.FC = () => {
   const submitButtonStyle = {
     width: '100%',
     padding: '12px',
-    backgroundColor: isFormValid ? '#4a90e2' : '#ccc',
+    backgroundColor: isSubmitting ? '#003366' : (isFormValid ? '#4a90e2' : '#ccc'), // Darker blue when submitting
     color: '#fff',
     border: 'none',
     borderRadius: '4px',
     fontSize: '16px',
-    cursor: isFormValid ? 'pointer' : 'not-allowed',
+    cursor: isSubmitting ? 'not-allowed' : (isFormValid ? 'pointer' : 'not-allowed'),
+    transition: 'background-color 0.3s ease', // Smooth transition for color change
   };
-
+  
   const addressStyle = {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -370,9 +385,14 @@ const RegisterPage: React.FC = () => {
                   <span style={{ marginLeft: '8px' }}>Sign up for promotional emails</span>
                 </label>
               </div>
-              <button type="submit" style={submitButtonStyle} disabled={!isFormValid}>
+              <Button 
+                variant="contained" 
+                disabled={!isFormValid} 
+                onClick={handleSubmit}
+                fullWidth
+                >
                 Submit
-              </button>
+                </Button>
             </div>
           )}
         </form>
