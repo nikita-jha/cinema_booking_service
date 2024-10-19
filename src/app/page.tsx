@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { getMovies } from "../lib/firebase/firestore";
-import MovieCard from "../components/MovieCard";
+import MovieCard from "../components/movieCard";
 import Navbar from "../components/Navbar";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from 'next/link';
-import { auth } from '../../lib/firebase/firebaseConfig'; // Firebase Auth
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { db } from '../../lib/firebase/firebaseConfig'; // Firestore
-
+import { auth } from '../lib/firebase/config'; // Firebase Auth
+import { onAuthStateChanged } from 'firebase/auth';
 
 const MovieCarousel = ({ title, movies }) => {
   const [startIndex, setStartIndex] = useState(0);
@@ -63,6 +61,7 @@ const HomePage = () => {
   const [comingSoonMovies, setComingSoonMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   const fetchMovies = async () => {
     setIsLoading(true);
@@ -81,7 +80,14 @@ const HomePage = () => {
   };
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
     fetchMovies();
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const filteredCurrentlyScreeningMovies = currentlyScreeningMovies.filter(
@@ -101,18 +107,13 @@ const HomePage = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <Navbar />
+      <Navbar user={user} />
       <div className="container mx-auto px-4 py-8">
         <div className="header relative">
           <h1 className="text-4xl font-bold text-center mb-12 text-gray-800">
             Cinema E-Booking
           </h1>
-          <button
-            type="submit"
-            className="absolute top-0 right-0 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            <Link href="/editprofile" >Edit Profile</Link>
-          </button>
+          {/* Edit Profile button removed */}
         </div>
         <div className="relative mb-12">
           <input

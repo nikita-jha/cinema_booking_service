@@ -1,19 +1,30 @@
+import React from 'react';
 import Link from 'next/link';
 
-const Navbar = () => {
-  return (
-    <nav className="bg-blue-600 text-white py-4 px-8 w-full"> {/* Ensure full width */}
-      <div className="flex justify-between items-center">
-        {/* Left side (Logo or Home link) */}
-        <div className="text-lg font-bold">
-          <Link href="/" className="hover:text-gray-300">Cinema E-Booking</Link>
-        </div>
+interface NavbarProps {
+  user: any | null;
+}
 
-        {/* Right side (Links for navigation) */}
-        <div className="space-x-6">
-          <Link href="/" className="hover:text-gray-300">Home</Link>
-          <Link href="/login" className="hover:text-gray-300">Login</Link>
-          <Link href="/register" className="hover:text-gray-300">Create Account</Link>
+const Navbar: React.FC<NavbarProps> = ({ user }) => {
+  return (
+    <nav className="bg-blue-600 p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link href="/" className="text-white text-2xl font-bold">
+          Cinema Booking
+        </Link>
+        <div>
+          <Link href="/" className="text-white mr-4">
+            Home
+          </Link>
+          {user ? (
+            <Link href="/editprofile" className="text-white">
+              Account
+            </Link>
+          ) : (
+            <Link href="/login" className="text-white">
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </nav>

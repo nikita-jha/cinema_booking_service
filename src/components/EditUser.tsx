@@ -37,9 +37,9 @@ const EditUser: React.FC<EditUserProps> = ({ user, onUserUpdated }) => {
   };
 
   return (
-    <div className="mb-8 flex justify-center">
+    <div className="mb-8 flex flex-col items-center">
       <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2"
         onClick={() => setIsFormOpen(true)}
       >
         Edit
@@ -97,17 +97,10 @@ const EditUser: React.FC<EditUserProps> = ({ user, onUserUpdated }) => {
                 <option value="Customer">Customer</option>
                 <option value="Admin">Admin</option>
               </select>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded"
-                >
-                  Cancel
-                </button>
+              <div className="flex justify-end mt-4"> 
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
                   Update User
                 </button>

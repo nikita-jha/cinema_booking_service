@@ -5,20 +5,39 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+import { useRouter } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 const LoginPage = () => {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
 
     const handleLogin = async (e) => {
-        e.preventDefault(); // Prevent the default form submission
+        e.preventDefault();
         try {
             // Authenticate user using email and password
-            await signInWithEmailAndPassword(auth, email, password);
-            // Redirect to a different page after successful login
-            // For example: router.push('/dashboard'); // Uncomment and import useRouter
-            alert("Login successful!");
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Fetch user data from Firestore
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const userType = userData.userType;
+
+                // Redirect based on userType
+                if (userType === 'customer') {
+                    router.push('/');
+                } else {
+                    router.push('/adminHome');
+                }
+            } else {
+                console.error("User document not found");
+                setErrorMessage("User data not found. Please contact support.");
+            }
         } catch (error) {
             setErrorMessage("Login failed. Please check your email and password.");
             console.error("Login error:", error);
