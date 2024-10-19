@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from '../../components/Navbar';
-import { useRouter } from 'next/navigation'; // Import useRouter
-import { auth } from '../../lib/firebase/config'; // Firebase authentication
+import { useRouter } from 'next/navigation';
+import { auth } from '../../lib/firebase/config'; 
 import { Button } from '@mui/material';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config'; // Import Firestore instance
+import { db } from '../../lib/firebase/config';
+import CryptoJS from 'crypto-js'; 
 
 
 const RegisterPage: React.FC = () => {
@@ -190,6 +191,15 @@ const router = useRouter(); // Initialize the router
       await sendEmailVerification(user);
       console.log("Verification email sent!");
 
+      // Encrypt card data
+      const encryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+      const encryptedCardData = cardData.map(card => ({
+        cardType: card.cardType,
+        cardNumber: card.cardNumber ? CryptoJS.AES.encrypt(card.cardNumber, encryptionKey).toString() : '',
+        expirationDate: card.expirationDate ? CryptoJS.AES.encrypt(card.expirationDate, encryptionKey).toString() : '',
+        cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : ''
+      }));
+
       // Prepare user data for Firestore
       const userData = {
         uid: user.uid,
@@ -199,8 +209,8 @@ const router = useRouter(); // Initialize the router
         phone: formData.phone,
         address: formData.address,
         promotionalEmails: formData.promotionalEmails,
-        userType: "customer", // Ensure userType is set to "customer"
-        cardData: cardData
+        userType: "customer",
+        cardData: encryptedCardData // Store encrypted card data
       };
 
       // Store user data in Firestore
@@ -335,7 +345,7 @@ const router = useRouter(); // Initialize the router
   };
 
   const sectionHeaderStyle = {
-    color: '#333333', // Darker color for section headers
+    color: '#333333', 
     fontSize: '20px',
     marginBottom: '15px',
   };

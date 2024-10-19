@@ -17,9 +17,16 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
             Home
           </Link>
           {user ? (
-            <Link href="/editprofile" className="text-white">
-              Account
-            </Link>
+            <>
+              <Link href="/editprofile" className="text-white mr-4">
+                Account
+              </Link>
+              {user.userType === 'admin' && (
+                <Link href="/admin" className="text-white mr-4">
+                  Admin
+                </Link>
+              )}
+            </>
           ) : (
             <Link href="/login" className="text-white">
               Login
