@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { getMovies } from "../lib/firebase/firestore";
 import MovieCard from "../components/MovieCard";
-import AddMovie from "../components/AddMovie";
 import Navbar from "../components/Navbar";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from 'next/link';
@@ -128,8 +127,6 @@ const HomePage = () => {
             size={20}
           />
         </div>
-
-        <AddMovie onMovieAdded={fetchMovies} />
 
         <MovieCarousel
           title="Now Screening"
