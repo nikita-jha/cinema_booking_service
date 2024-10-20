@@ -30,7 +30,7 @@ const LoginPage = () => {
                         email: firebaseUser.email || '',
                         userType: userData.userType
                     });
-                    if (userData.userType === 'customer') {
+                    if (userData.userType === 'Customer') {
                         router.push('/');
                     } else {
                         router.push('/adminHome');
@@ -67,17 +67,18 @@ const LoginPage = () => {
                 // Set user in context
                 setUser({
                     id: userCredential.user.uid,
-                    name: userData.name || '',
+                    name: `${userData.firstName} ${userData.lastName}` || '',  // Combining first and last names
                     email: userCredential.user.email || '',
                     userType: userType
                 });
 
                 // Redirect based on userType
-                if (userType === 'customer') {
+                if (userType.toLowerCase() === 'customer') {
                     router.push('/');
-                } else {
+                } else if (userType.toLowerCase() === 'admin') {
                     router.push('/adminHome');
                 }
+                
             } else {
                 console.error("User document not found");
                 setErrorMessage("User data not found. Please contact support.");

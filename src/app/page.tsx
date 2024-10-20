@@ -67,6 +67,7 @@ const HomePage = () => {
     setIsLoading(true);
     try {
       const moviesData = await getMovies();
+      console.log(moviesData); // Check if image URLs are being retrieved
       setCurrentlyScreeningMovies(
         moviesData.filter((movie) => movie.category === "Currently Screening"),
       );
