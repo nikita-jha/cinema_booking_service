@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth } from '../lib/firebase/config';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
@@ -8,6 +8,9 @@ const ChangePassword: React.FC = () => {
     const [newPassword, setNewPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [oldPasswordError, setOldPasswordError] = useState('');
+    const [isFormValid, setIsFormValid] = useState(false);
+    const [showNewPasswordError, setShowNewPasswordError] = useState(false);
 
     const handleOpen = () => setIsOpen(true);
     const handleClose = () => {
@@ -16,7 +19,35 @@ const ChangePassword: React.FC = () => {
         setNewPassword('');
         setError('');
         setSuccess('');
+        setOldPasswordError('');
+        setShowNewPasswordError(false);
     };
+
+    useEffect(() => {
+        const validateForm = async () => {
+            const user = auth.currentUser;
+            if (!user || !user.email) {
+                setIsFormValid(false);
+                return;
+            }
+
+            try {
+                const credential = EmailAuthProvider.credential(user.email, oldPassword);
+                await reauthenticateWithCredential(user, credential);
+                setOldPasswordError('');
+            } catch (reauthError) {
+                setOldPasswordError('Current password is incorrect.');
+                setIsFormValid(false);
+                return;
+            }
+
+            const hasNumberAndLetter = /^(?=.*[A-Za-z])(?=.*\d).+$/.test(newPassword);
+            setIsFormValid(hasNumberAndLetter);
+            setShowNewPasswordError(!hasNumberAndLetter && newPassword !== '');
+        };
+
+        validateForm();
+    }, [oldPassword, newPassword]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,20 +56,10 @@ const ChangePassword: React.FC = () => {
 
         try {
             const user = auth.currentUser;
-            if (!user || !user.email) {
+            if (!user) {
                 throw new Error('No user is currently signed in.');
             }
 
-            // Re-authenticate the user
-            const credential = EmailAuthProvider.credential(user.email, oldPassword);
-            try {
-                await reauthenticateWithCredential(user, credential);
-            } catch (reauthError) {
-                setError('Current password is incorrect. Please try again.');
-                return;
-            }
-
-            // Update the password
             await updatePassword(user, newPassword);
 
             setSuccess('Password updated successfully!');
@@ -75,7 +96,8 @@ const ChangePassword: React.FC = () => {
                                 placeholder="Old Password *"
                                 className="mb-2 w-full p-2 border rounded text-gray-800"
                                 required
-                            ></input>
+                            />
+                            {oldPasswordError && <p className="text-red-500 mb-2">{oldPasswordError}</p>}
                             <input
                                 type="password"
                                 value={newPassword}
@@ -84,6 +106,9 @@ const ChangePassword: React.FC = () => {
                                 className="mb-2 w-full p-2 border rounded text-gray-800"
                                 required
                             />
+                            {showNewPasswordError && (
+                                <p className="text-red-500 mb-2">New password must contain at least one letter and one number.</p>
+                            )}
                             {error && <p className="text-red-500 mb-2">{error}</p>}
                             {success && <p className="text-green-500 mb-2">{success}</p>}
                             <div className="flex justify-end mt-4">
@@ -96,7 +121,8 @@ const ChangePassword: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    className={`px-4 py-2 ${isFormValid ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 cursor-not-allowed'} text-white rounded`}
+                                    disabled={!isFormValid}
                                 >
                                     Change Password
                                 </button>
