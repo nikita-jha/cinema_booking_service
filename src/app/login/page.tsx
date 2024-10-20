@@ -18,9 +18,19 @@ const LoginPage = () => {
     const { setUser } = useUser();
 
     useEffect(() => {
+        // Check if user credentials are stored in localStorage
+        const savedEmail = localStorage.getItem("rememberedEmail");
+        const savedPassword = localStorage.getItem("rememberedPassword");
+        const savedRememberMe = localStorage.getItem("rememberMe") === 'true';
+
+        if (savedEmail && savedPassword && savedRememberMe) {
+            setEmail(savedEmail);
+            setPassword(savedPassword);
+            setRememberMe(true);
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                // User is signed in
                 const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
@@ -28,7 +38,7 @@ const LoginPage = () => {
                         id: firebaseUser.uid,
                         name: userData.name || '',
                         email: firebaseUser.email || '',
-                        userType: userData.userType
+                        userType: userData.userType,
                     });
                     if (userData.userType === 'Customer') {
                         router.push('/');
@@ -37,7 +47,6 @@ const LoginPage = () => {
                     }
                 }
             } else {
-                // User is signed out
                 setUser(null);
             }
         });
@@ -51,34 +60,40 @@ const LoginPage = () => {
         setErrorMessage('');
 
         try {
-            // Set persistence based on rememberMe state
             await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-
-            // Authenticate user
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             
-            // Fetch user data from Firestore
             const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 const userType = userData.userType;
+
                 localStorage.setItem("user", JSON.stringify(userData));
 
-                // Set user in context
+                // If "Remember Me" is checked, store email and password
+                if (rememberMe) {
+                    localStorage.setItem("rememberedEmail", email);
+                    localStorage.setItem("rememberedPassword", password);
+                    localStorage.setItem("rememberMe", 'true');
+                } else {
+                    localStorage.removeItem("rememberedEmail");
+                    localStorage.removeItem("rememberedPassword");
+                    localStorage.setItem("rememberMe", 'false');
+                }
+
                 setUser({
                     id: userCredential.user.uid,
-                    name: `${userData.firstName} ${userData.lastName}` || '',  // Combining first and last names
+                    name: `${userData.firstName} ${userData.lastName}` || '',
                     email: userCredential.user.email || '',
-                    userType: userType
+                    userType: userType,
                 });
 
-                // Redirect based on userType
                 if (userType.toLowerCase() === 'customer') {
                     router.push('/');
                 } else if (userType.toLowerCase() === 'admin') {
                     router.push('/adminHome');
                 }
-                
+
             } else {
                 console.error("User document not found");
                 setErrorMessage("User data not found. Please contact support.");
