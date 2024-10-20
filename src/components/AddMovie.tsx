@@ -66,7 +66,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 name="title"
                 value={movieData.title}
                 onChange={handleInputChange}
-                placeholder="Title"
+                placeholder="Title *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -75,7 +75,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 name="producer"
                 value={movieData.producer}
                 onChange={handleInputChange}
-                placeholder="Producer"
+                placeholder="Producer *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -84,7 +84,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 name="director"
                 value={movieData.director}
                 onChange={handleInputChange}
-                placeholder="Director"
+                placeholder="Director *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -92,7 +92,7 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 name="synopsis"
                 value={movieData.synopsis}
                 onChange={handleInputChange}
-                placeholder="Synopsis"
+                placeholder="Synopsis *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -109,12 +109,12 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 name="mpaaRating"
                 value={movieData.mpaaRating}
                 onChange={handleInputChange}
-                placeholder="MPAA Rating"
+                placeholder="MPAA Rating *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
               <select
-                name="category"
+                name="category *"
                 value={movieData.category}
                 onChange={handleInputChange}
                 className="mb-2 w-full p-2 border rounded text-gray-800"

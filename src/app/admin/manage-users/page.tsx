@@ -53,7 +53,7 @@ const AdminPortalHomePage = () => {
             <thead className="bg-blue-100">
               <tr>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  UserID
+                  Email
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
                   First Name
@@ -62,7 +62,13 @@ const AdminPortalHomePage = () => {
                   Last Name
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Email
+                  Address
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Phone Number
+                </th>
+                <th className="py-2 px-4 text-left border-b text-gray-700">
+                  Promotional Emails
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
                   User Type
@@ -76,7 +82,7 @@ const AdminPortalHomePage = () => {
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {user.userID}
+                    {user.email}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
                     {user.firstName}
@@ -85,7 +91,13 @@ const AdminPortalHomePage = () => {
                     {user.lastName}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {user.email}
+                    {user.address?.street}, {user.address?.city}, {user.address?.state} {user.address?.zip}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {user.phone}
+                  </td>
+                  <td className="py-2 px-4 border-b text-gray-800">
+                    {user.promotionalEmails ? 'Yes' : 'No'}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
                     {user.userType}
@@ -98,9 +110,6 @@ const AdminPortalHomePage = () => {
                         onClick={() => deleteCallback(user.id)}
                       >
                         Delete
-                      </button>
-                      <button className="text-red-500 hover:text-red-700">
-                        <i className="fas fa-trash-alt"></i>
                       </button>
                     </div>
                   </td>

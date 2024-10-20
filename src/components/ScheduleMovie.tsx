@@ -66,22 +66,28 @@ const ScheduleMovie: React.FC<ScheduleMovieProps> = ({ movie, onScheduleAdded })
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <h3 className="text-lg font-bold mb-4">Schedule Movie</h3>
             <form onSubmit={handleAddSchedule}>
-              <input
-                type="date"
-                name="date"
-                value={scheduleData.date}
-                onChange={handleInputChange}
-                className="mb-2 w-full p-2 border rounded text-gray-800"
-                required
-              />
-              <input
-                type="time"
-                name="time"
-                value={scheduleData.time}
-                onChange={handleInputChange}
-                className="mb-2 w-full p-2 border rounded text-gray-800"
-                required
-              />
+              <label className="block mb-2">
+                Date *
+                <input
+                  type="date"
+                  name="date"
+                  value={scheduleData.date}
+                  onChange={handleInputChange}
+                  className="mt-1 w-full p-2 border rounded text-gray-800"
+                  required
+                />
+              </label>
+              <label className="block mb-2">
+                Time *
+                <input
+                  type="time"
+                  name="time"
+                  value={scheduleData.time}
+                  onChange={handleInputChange}
+                  className="mt-1 w-full p-2 border rounded text-gray-800"
+                  required
+                />
+              </label>
               <div className="flex justify-end">
                 <button
                   type="button"

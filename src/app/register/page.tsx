@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from '../../components/Navbar';
-import { registerUser } from '../../lib/firebase/firestore'; // Import the registration function
-import { useRouter } from 'next/navigation'; // Import useRouter
-import { auth } from '../../lib/firebase/config'; // Firebase authentication
+import { useRouter } from 'next/navigation';
+import { auth } from '../../lib/firebase/config'; 
 import { Button } from '@mui/material';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase/config';
+import CryptoJS from 'crypto-js'; 
 
 
 const RegisterPage: React.FC = () => {
@@ -18,11 +21,14 @@ const router = useRouter(); // Initialize the router
     firstName: "",
     lastName: "",
     phone: "",
-    street: "",
-    city: "",
-    state: "",
-    zip: "",
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      zip: "",
+    },
     promotionalEmails: false,
+    userType: "Customer", // Set default userType to "customer"
   });
   const [cardData, setCardData] = useState([
     { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
@@ -38,6 +44,7 @@ const router = useRouter(); // Initialize the router
     cardNumber: "",
     expirationDate: "",
     cvv: "",
+    zip: "",
   });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // New state for submission status
@@ -54,10 +61,20 @@ const router = useRouter(); // Initialize the router
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    if (name === "street" || name === "city" || name === "state" || name === "zip") {
+      setFormData((prevData) => ({
+        ...prevData,
+        address: {
+          ...prevData.address,
+          [name]: value,
+        },
+      }));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
     validateField(name, value);
   };
 
@@ -165,17 +182,47 @@ const router = useRouter(); // Initialize the router
     }
     setIsSubmitting(true);
 
-    // Call registerUser from firestore.ts and pass formData
     try {
-        await registerUser({ ...formData, cardData });
-        console.log('User registered successfully!');
-        router.push('/confirmregister');
-      } catch (error) {
-        console.error('Error registering user:', error);
-      } finally {
-        // Ensure that isSubmitting is reset to false after submission
-        setIsSubmitting(false);
-      }
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // Send email verification
+      await sendEmailVerification(user);
+      console.log("Verification email sent!");
+
+      // Encrypt card data
+      const encryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+      const encryptedCardData = cardData.map(card => ({
+        cardType: card.cardType,
+        cardNumber: card.cardNumber ? CryptoJS.AES.encrypt(card.cardNumber, encryptionKey).toString() : '',
+        expirationDate: card.expirationDate ? CryptoJS.AES.encrypt(card.expirationDate, encryptionKey).toString() : '',
+        cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : ''
+      }));
+
+      // Prepare user data for Firestore
+      const userData = {
+        uid: user.uid,
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        address: formData.address,
+        promotionalEmails: formData.promotionalEmails,
+        userType: "Customer",
+        cardData: encryptedCardData // Store encrypted card data
+      };
+
+      // Store user data in Firestore
+      await setDoc(doc(db, "users", user.uid), userData);
+
+      console.log('User registered successfully!');
+      router.push('/confirmregister');
+    } catch (error) {
+      console.error('Error registering user:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const validateForm = () => {
@@ -297,6 +344,12 @@ const router = useRouter(); // Initialize the router
     gap: '20px',
   };
 
+  const sectionHeaderStyle = {
+    color: '#333333', 
+    fontSize: '20px',
+    marginBottom: '15px',
+  };
+
   return (
     <div>
       <Navbar />
@@ -329,7 +382,7 @@ const router = useRouter(); // Initialize the router
         <form style={formStyle} onSubmit={handleSubmit}>
           {activeTab === "personal" && (
             <div>
-              <h2>Personal Information</h2>
+              <h2 style={sectionHeaderStyle}>Personal Information</h2>
               <label style={labelStyle} htmlFor="email">Email Address: *</label>
               <input
                 style={inputStyle}
@@ -403,7 +456,7 @@ const router = useRouter(); // Initialize the router
 
           {activeTab === "payment" && (
             <div>
-              <h2>Payment Information (Optional)</h2>
+              <h2 style={sectionHeaderStyle}>Payment Information (Optional)</h2>
               <div style={cardContainerStyle}>
                 {cardData.map((card, index) => (
                   <div key={index} style={cardStyle}>
@@ -477,7 +530,7 @@ const router = useRouter(); // Initialize the router
 
           {activeTab === "address" && (
             <div>
-              <h2>Home Address (Optional)</h2>
+              <h2 style={sectionHeaderStyle}>Home Address (Optional)</h2>
               <div style={addressStyle}>
                 <div>
                   <label style={labelStyle} htmlFor="street">Street:</label>
@@ -487,7 +540,7 @@ const router = useRouter(); // Initialize the router
                     id="street"
                     name="street"
                     placeholder="Enter your street address"
-                    value={formData.street}
+                    value={formData.address.street}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -500,7 +553,7 @@ const router = useRouter(); // Initialize the router
                     id="city"
                     name="city"
                     placeholder="Enter your city"
-                    value={formData.city}
+                    value={formData.address.city}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -511,7 +564,7 @@ const router = useRouter(); // Initialize the router
                     style={inputStyle}
                     id="state"
                     name="state"
-                    value={formData.state}
+                    value={formData.address.state}
                     onChange={handleInputChange}
                   >
                     <option value="">Select State</option>
@@ -535,7 +588,7 @@ const router = useRouter(); // Initialize the router
                     id="zip"
                     name="zip"
                     placeholder="Enter your zip code"
-                    value={formData.zip}
+                    value={formData.address.zip}
                     onChange={handleInputChange}
                   />
                   {validationMessages.zip && <p className="text-red-500 text-sm mt-1">{validationMessages.zip}</p>}

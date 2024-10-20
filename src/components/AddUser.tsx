@@ -53,6 +53,12 @@ const AddUser: React.FC<AddUserProps> = ({ onUserAdded }) => {
       {isFormOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+              onClick={() => setIsFormOpen(false)}
+            >
+              &#10005;
+            </button>
             <h3 className="text-lg font-bold mb-4">Add New User</h3>
             <form onSubmit={handleAddUser}>
               <input
@@ -60,7 +66,7 @@ const AddUser: React.FC<AddUserProps> = ({ onUserAdded }) => {
                 name="userID"
                 value={userData.userID}
                 onChange={handleInputChange}
-                placeholder="User ID"
+                placeholder="User ID *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -69,7 +75,7 @@ const AddUser: React.FC<AddUserProps> = ({ onUserAdded }) => {
                 name="email"
                 value={userData.email}
                 onChange={handleInputChange}
-                placeholder="Email"
+                placeholder="Email *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -78,7 +84,7 @@ const AddUser: React.FC<AddUserProps> = ({ onUserAdded }) => {
                 name="firstName"
                 value={userData.firstName}
                 onChange={handleInputChange}
-                placeholder="First Name"
+                placeholder="First Name *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -87,7 +93,7 @@ const AddUser: React.FC<AddUserProps> = ({ onUserAdded }) => {
                 name="lastName"
                 value={userData.lastName}
                 onChange={handleInputChange}
-                placeholder="Last Name"
+                placeholder="Last Name *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -98,7 +104,7 @@ const AddUser: React.FC<AddUserProps> = ({ onUserAdded }) => {
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               >
-                <option value="">Select User Type</option>
+                <option value="">Select User Type *</option>
                 <option value="Customer">Customer</option>
                 <option value="Admin">Admin</option>
               </select>

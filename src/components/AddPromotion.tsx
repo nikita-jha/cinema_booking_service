@@ -54,6 +54,12 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
       {isFormOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+              onClick={() => setIsFormOpen(false)}
+            >
+              &#10005;
+            </button>
             <h3 className="text-lg font-bold mb-4">Add New Promotion</h3>
             <form onSubmit={handleAddPromotion}>
               <input
@@ -61,7 +67,7 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
                 name="discountCode"
                 value={promotionData.discountCode}
                 onChange={handleInputChange}
-                placeholder="Promotion Code"
+                placeholder="Promotion Code *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -70,7 +76,7 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
                 name="value"
                 value={promotionData.value}
                 onChange={handleInputChange}
-                placeholder="Discount Percentage"
+                placeholder="Discount Percentage *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -79,7 +85,7 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
                 name="startDate"
                 value={promotionData.startDate}
                 onChange={handleInputChange}
-                placeholder="Start Date"
+                placeholder="Start Date *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -88,7 +94,7 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
                 name="endDate"
                 value={promotionData.endDate}
                 onChange={handleInputChange}
-                placeholder="End Date"
+                placeholder="End Date *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />

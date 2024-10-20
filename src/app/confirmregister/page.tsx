@@ -1,30 +1,28 @@
-"use client"; // Add this line to indicate it's a client component
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // For redirection
-import { auth } from '../../lib/firebase/config'; // Firebase auth import
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth } from '../../lib/firebase/config';
 import Navbar from '../../components/Navbar';
-import Link from 'next/link';
 
 const EmailConfirmationPage = () => {
     const router = useRouter();
+    const [isVerified, setIsVerified] = useState(false);
 
-    // Check if the user has verified their email
     useEffect(() => {
-        const intervalId = setInterval(async () => {
+        const checkEmailVerification = async () => {
             const user = auth.currentUser;
-
             if (user) {
-                await user.reload(); // Reload user data to get the latest info
+                await user.reload();
                 if (user.emailVerified) {
-                    console.log('Email is verified!');
-                    clearInterval(intervalId); // Stop the interval once verified
-                    router.push('/login'); // Redirect to login page
+                    setIsVerified(true);
+                    setTimeout(() => router.push('/login'), 3000);
                 }
             }
-        }, 3000); // Check every 3 seconds
+        };
 
-        // Cleanup the interval when the component is unmounted
+        const intervalId = setInterval(checkEmailVerification, 3000);
+
         return () => clearInterval(intervalId);
     }, [router]);
 
@@ -37,13 +35,14 @@ const EmailConfirmationPage = () => {
                 </div>
                 <div className="flex justify-center">
                     <div className="bg-white border rounded-lg shadow-md p-12 max-w-3xl text-center w-full">
-                        <h1 className="text-5xl font-bold mb-6">Confirm Your Email Address</h1> 
-                        <p className="text-xl mb-4">Please check your email for a confirmation link to verify your account.</p>
-                        <p className="text-xl">
-                            If you haven't received the email, you can 
-                            <Link href="/resend-confirmation" className="text-blue-500 underline"> click here to resend it</Link>.
-                        </p>
-                        <p className="text-xl mt-6 text-gray-500">Once your email is verified, you will be redirected to the login page.</p>
+                        <h1 className="text-5xl font-bold mb-6 text-gray-900">Confirm Your Email Address</h1> 
+                        {isVerified ? (
+                            <p className="text-xl mb-4 text-gray-800">Your email has been verified. You will be redirected to the login page shortly.</p>
+                        ) : (
+                            <p className="text-xl mb-4 text-gray-800">Please check your inbox and click the verification link to confirm your email address.</p>
+                        )}
+
+                        <p className="text-xl mt-6 text-gray-500">Once your email is verified, you will be automatically redirected to the login page.</p>
                     </div>
                 </div>
             </div>
