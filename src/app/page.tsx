@@ -107,7 +107,7 @@ const HomePage = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <Navbar user={user} />
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="header relative">
           <h1 className="text-4xl font-bold text-center mb-12 text-gray-800">

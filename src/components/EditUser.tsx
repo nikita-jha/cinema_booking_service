@@ -21,7 +21,20 @@ const EditUser: React.FC<EditUserProps> = ({ user, onUserUpdated }) => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setUserData({ ...userData, [name]: value });
+    if (name.startsWith("address.")) {
+      const addressField = name.split(".")[1];
+      setUserData({
+        ...userData,
+        address: { ...userData.address, [addressField]: value },
+      });
+    } else {
+      setUserData({ ...userData, [name]: value });
+    }
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setUserData({ ...userData, [name]: checked });
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
@@ -48,26 +61,14 @@ const EditUser: React.FC<EditUserProps> = ({ user, onUserUpdated }) => {
       {isFormOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+              onClick={() => setIsFormOpen(false)}
+            >
+              &#10005;
+            </button>
             <h3 className="text-lg font-bold mb-4">Edit User</h3>
             <form onSubmit={handleUpdateUser}>
-              <input
-                type="text"
-                name="userID"
-                value={userData.userID}
-                onChange={handleInputChange}
-                placeholder="User ID"
-                className="mb-2 w-full p-2 border rounded text-gray-800"
-                required
-              />
-              <input
-                type="email"
-                name="email"
-                value={userData.email}
-                onChange={handleInputChange}
-                placeholder="Email"
-                className="mb-2 w-full p-2 border rounded text-gray-800"
-                required
-              />
               <input
                 type="text"
                 name="firstName"
@@ -86,6 +87,63 @@ const EditUser: React.FC<EditUserProps> = ({ user, onUserUpdated }) => {
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
+              <input
+                type="text"
+                name="address.street"
+                value={userData.address.street}
+                onChange={handleInputChange}
+                placeholder="Street"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
+              <input
+                type="text"
+                name="address.city"
+                value={userData.address.city}
+                onChange={handleInputChange}
+                placeholder="City"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
+              <input
+                type="text"
+                name="address.state"
+                value={userData.address.state}
+                onChange={handleInputChange}
+                placeholder="State"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
+              <input
+                type="text"
+                name="address.zip"
+                value={userData.address.zip}
+                onChange={handleInputChange}
+                placeholder="ZIP Code"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
+              <input
+                type="tel"
+                name="phone"
+                value={userData.phone}
+                onChange={handleInputChange}
+                placeholder="Phone Number"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
+              <div className="mb-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="promotionalEmails"
+                    checked={userData.promotionalEmails}
+                    onChange={handleCheckboxChange}
+                    className="mr-2"
+                  />
+                  <span className="text-gray-800">Receive Promotional Emails</span>
+                </label>
+              </div>
               <select
                 name="userType"
                 value={userData.userType}

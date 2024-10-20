@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "../../../components/Navbar";
 import AddPromotion from "../../../components/AddPromotion";
+import EditPromotion from "../../../components/EditPromotion";
 import { IPromotion } from "../../../models/promotion.model";
 import { deletePromotion, getPromotions } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
 
@@ -84,6 +85,7 @@ const ManagePromotionsPage = () => {
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
                     <div className="flex space-x-2">
+                      <EditPromotion promotion={promotion} onPromotionUpdated={fetchPromotions} />
                       <button
                         className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                         onClick={() => deleteCallback(promotion.id)}

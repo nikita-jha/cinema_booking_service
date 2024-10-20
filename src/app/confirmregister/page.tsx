@@ -41,7 +41,7 @@ const EmailConfirmationPage = () => {
                         ) : (
                             <p className="text-xl mb-4 text-gray-800">Please check your inbox and click the verification link to confirm your email address.</p>
                         )}
-                        )}
+
                         <p className="text-xl mt-6 text-gray-500">Once your email is verified, you will be automatically redirected to the login page.</p>
                     </div>
                 </div>

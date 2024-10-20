@@ -1,3 +1,5 @@
+import { IAddress } from "./address.model";
+
 export interface IUser {
   id: string;
   userID: string;
@@ -5,4 +7,7 @@ export interface IUser {
   firstName: string;
   lastName: string;
   userType: string;
+  address: IAddress;
+  phone: string;
+  promotionalEmails: boolean;
 }

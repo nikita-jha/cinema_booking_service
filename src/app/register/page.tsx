@@ -28,7 +28,7 @@ const router = useRouter(); // Initialize the router
       zip: "",
     },
     promotionalEmails: false,
-    userType: "customer", // Set default userType to "customer"
+    userType: "Customer", // Set default userType to "customer"
   });
   const [cardData, setCardData] = useState([
     { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
@@ -209,7 +209,7 @@ const router = useRouter(); // Initialize the router
         phone: formData.phone,
         address: formData.address,
         promotionalEmails: formData.promotionalEmails,
-        userType: "customer",
+        userType: "Customer",
         cardData: encryptedCardData // Store encrypted card data
       };
 

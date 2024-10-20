@@ -4,9 +4,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../../components/Navbar";
 import { auth, db } from "../../lib/firebase/config";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { updatePassword, signOut, sendEmailVerification } from "firebase/auth";
+import { updatePassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import ChangePassword from "../../components/ChangePassword";
+import { useUser } from "../../context/UserContext";
 
 const EditProfilePage = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -15,33 +16,41 @@ const EditProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const { setUser } = useUser();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
             setOriginalUserData(data);
             setUserData(data);
+            setUser({
+              id: firebaseUser.uid,
+              name: data.name || '',
+              email: firebaseUser.email || '',
+              userType: data.userType
+            });
           } else {
             setError("User data not found");
           }
-        } else {
-          setError("User not authenticated");
+        } catch (err) {
+          setError("Error fetching user data");
+          console.error(err);
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        setError("Error fetching user data");
-        console.error(err);
-      } finally {
+      } else {
+        setError("User not authenticated");
         setLoading(false);
+        router.push('/login'); // Redirect to login if not authenticated
       }
-    };
+    });
 
-    fetchUserData();
-  }, []);
+    return () => unsubscribe();
+  }, [setUser, router]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -79,8 +88,9 @@ const EditProfilePage = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // Redirect to home page or login page after logout
-      window.location.href = "/";
+      localStorage.removeItem("user");
+      setUser(null); // Update the user context
+      router.push('/'); // Redirect to login page after logout
     } catch (error) {
       console.error("Error logging out:", error);
       setError("Failed to log out");
@@ -106,7 +116,6 @@ const EditProfilePage = () => {
       }
 
       const data = await response.json();
-      alert(data.message);
     } catch (error) {
       setError("Failed to send email");
       console.error(error);
@@ -237,7 +246,7 @@ const EditProfilePage = () => {
 
   return (
     <div>
-      <Navbar isLoggedIn={true} />
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-center">Edit Profile</h1>
 
@@ -299,6 +308,16 @@ const EditProfilePage = () => {
             <div style={contentStyle}>
               {activeTab === "personal" && (
                 <div>
+                  <h1
+                    style={{
+                      color: "#333",
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {" "}
+                    Hey {userData?.firstName}!
+                  </h1>
                   <h2 style={{ color: "#333", fontWeight: "bold" }}>
                     Personal Information
                   </h2>
@@ -310,7 +329,7 @@ const EditProfilePage = () => {
                     type="text"
                     id="firstName"
                     name="firstName"
-                    value={userData.firstName}
+                    value={userData?.firstName || ""}
                     onChange={handleInputChange}
                   />
 
@@ -322,7 +341,7 @@ const EditProfilePage = () => {
                     type="text"
                     id="lastName"
                     name="lastName"
-                    value={userData.lastName}
+                    value={userData?.lastName || ""}
                     onChange={handleInputChange}
                   />
 
@@ -333,9 +352,35 @@ const EditProfilePage = () => {
                     style={readOnlyInputStyle}
                     type="email"
                     id="email"
-                    value={userData.email}
+                    value={userData?.email || ""}
                     readOnly
                   />
+
+                  <div style={{ marginTop: "20px" }}>
+                    <label
+                      style={{
+                        ...labelStyle,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        id="promotionalEmails"
+                        name="promotionalEmails"
+                        checked={userData?.promotionalEmails || false}
+                        onChange={(e) => {
+                          setUserData((prevData) => ({
+                            ...prevData,
+                            promotionalEmails: e.target.checked,
+                          }));
+                        }}
+                      />
+                      <span style={{ marginLeft: "8px" }}>
+                        Sign up for promotional emails
+                      </span>
+                    </label>
+                  </div>
 
                   <ChangePassword />
                 </div>
@@ -343,6 +388,17 @@ const EditProfilePage = () => {
 
               {activeTab === "payment" && (
                 <div>
+                  <h1
+                    style={{
+                      color: "#333",
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {" "}
+                    Hey {userData?.firstName}!
+                  </h1>
+
                   <h2 style={{ color: "#333", fontWeight: "bold" }}>
                     Payment Information
                   </h2>
@@ -428,6 +484,17 @@ const EditProfilePage = () => {
 
               {activeTab === "address" && (
                 <div>
+                  <h1
+                    style={{
+                      color: "#333",
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {" "}
+                    Hey {userData?.firstName}!
+                  </h1>
+
                   <h2 style={{ color: "#333", fontWeight: "bold" }}>
                     Home Address
                   </h2>

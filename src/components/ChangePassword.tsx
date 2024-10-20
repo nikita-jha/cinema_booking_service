@@ -60,21 +60,27 @@ const ChangePassword: React.FC = () => {
             {isOpen && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
                     <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <button
+                            onClick={handleClose}
+                            className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+                        >
+                            &#10005;
+                        </button>
                         <h3 className="text-lg font-bold mb-4 text-gray-500">Change Password</h3>
                         <form onSubmit={handleSubmit}>
                             <input
                                 type="password"
                                 value={oldPassword}
                                 onChange={(e) => setOldPassword(e.target.value)}
-                                placeholder="Old Password"
+                                placeholder="Old Password *"
                                 className="mb-2 w-full p-2 border rounded text-gray-800"
                                 required
-                            />
+                            ></input>
                             <input
                                 type="password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="New Password"
+                                placeholder="New Password *"
                                 className="mb-2 w-full p-2 border rounded text-gray-800"
                                 required
                             />
