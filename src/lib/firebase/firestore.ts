@@ -28,6 +28,7 @@ export const registerUser = async (userData: IUser) => {
         state,
         zip,
       },
+      status: 'active',
       promotionalEmails,
     });
 

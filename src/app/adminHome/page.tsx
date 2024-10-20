@@ -21,7 +21,7 @@ const AdminPortalHomePage = () => {
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        if (userData.userType === "admin") {
+        if (userData.userType.toLowerCase() === "admin") {
           setIsAdmin(true);
         } else {
           setIsAdmin(false);

@@ -210,6 +210,7 @@ const router = useRouter(); // Initialize the router
         address: formData.address,
         promotionalEmails: formData.promotionalEmails,
         userType: "Customer",
+        status: "active",
         cardData: encryptedCardData // Store encrypted card data
       };
 
