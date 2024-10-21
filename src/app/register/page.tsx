@@ -130,11 +130,11 @@ const router = useRouter(); // Initialize the router
     let message = "";
     switch (name) {
       case "cardNumber":
-        if (cardData[index].cardType === "visa" || cardData[index].cardType === "mastercard") {
+        if (cardData[index].cardType === "Visa" || cardData[index].cardType === "Mastercard") {
           if (!/^\d{16}$/.test(value)) {
             message = "Card number should have 16 digits.";
           }
-        } else if (cardData[index].cardType === "amex") {
+        } else if (cardData[index].cardType === "Amex") {
           if (!/^\d{15}$/.test(value)) {
             message = "Card number should have 15 digits.";
           }
@@ -153,11 +153,11 @@ const router = useRouter(); // Initialize the router
         }
         break;
       case "cvv":
-        if (cardData[index].cardType === "visa" || cardData[index].cardType === "mastercard") {
+        if (cardData[index].cardType === "Visa" || cardData[index].cardType === "Mastercard") {
           if (!/^\d{3}$/.test(value)) {
             message = "CVV should have 3 digits.";
           }
-        } else if (cardData[index].cardType === "amex") {
+        } else if (cardData[index].cardType === "Amex") {
           if (!/^\d{4}$/.test(value)) {
             message = "CVV should have 4 digits.";
           }
@@ -471,9 +471,9 @@ const router = useRouter(); // Initialize the router
                       onChange={(e) => handleCardInputChange(index, e)}
                     >
                       <option value="">Select Card Type</option>
-                      <option value="visa">Visa</option>
-                      <option value="mastercard">MasterCard</option>
-                      <option value="amex">American Express</option>
+                      <option value="Visa">Visa</option>
+                      <option value="Mastercard">MasterCard</option>
+                      <option value="Amex">American Express</option>
                     </select>
 
                     <label style={labelStyle} htmlFor={`cardNumber${index}`}>Card Number:</label>
