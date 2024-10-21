@@ -64,6 +64,33 @@ const EditProfilePage = () => {
     }));
   };
 
+  const handleNestedInputChange = (e) => {
+    const { name, value } = e.target;
+    const [parent, child] = name.split('.');
+    setUserData((prevData) => ({
+      ...prevData,
+      [parent]: {
+        ...prevData[parent],
+        [child]: value,
+      },
+    }));
+  };
+
+  const handleCardInputChange = (e, cardId) => {
+    const { name, value } = e.target;
+    const [, field] = name.split('.');
+    setUserData((prevData) => ({
+      ...prevData,
+      cardData: {
+        ...prevData.cardData,
+        [cardId]: {
+          ...prevData.cardData[cardId],
+          [field]: value,
+        },
+      },
+    }));
+  };
+
   const isProfileChanged = useCallback(() => {
     if (!originalUserData || !userData) return false;
     return JSON.stringify(originalUserData) !== JSON.stringify(userData);
@@ -145,6 +172,10 @@ const EditProfilePage = () => {
     }
   };
 
+  const handleCancel = () => {
+    router.push("/"); // Exit without saving
+  };
+
   const containerStyle = {
     maxWidth: "1400px",
     minHeight: "600px",
@@ -192,20 +223,13 @@ const EditProfilePage = () => {
     borderRadius: "4px",
     border: "1px solid #ccc",
     fontSize: "14px",
-    color: "#999",
-  };
-
-  const readOnlyInputStyle = {
-    ...inputStyle,
-    backgroundColor: "#f0f0f0",
-    color: "#999", // Changed from '#ccc' to '#999' for a lighter text color
-    cursor: "not-allowed",
+    color: "#333",
   };
 
   const labelStyle = {
     display: "block",
     marginBottom: "5px",
-    color: "#666", // Changed from '#666' to '#333' for darker text
+    color: "#666",
   };
 
   const cardContainerStyle = {
@@ -222,23 +246,33 @@ const EditProfilePage = () => {
   };
 
   const logoutButtonStyle = {
-    backgroundColor: "#dc3545", // Red color
+    backgroundColor: "#dc3545",
     color: "#fff",
     padding: "10px",
     borderRadius: "4px",
     cursor: "pointer",
     textAlign: "center",
-    marginTop: "auto", // Push the button to the bottom
+    marginTop: "auto",
   };
 
   const saveAndExitButtonStyle = {
-    backgroundColor: "#28a745", // Green color
+    backgroundColor: "#28a745",
     color: "#fff",
     padding: "10px",
     borderRadius: "4px",
     cursor: "pointer",
     textAlign: "center",
-    marginBottom: "10px", // Add some space between buttons
+    marginBottom: "10px",
+  };
+
+  const cancelButtonStyle = {
+    backgroundColor: "#6c757d",
+    color: "#fff",
+    padding: "10px",
+    borderRadius: "4px",
+    cursor: "pointer",
+    textAlign: "center",
+    marginBottom: "10px",
   };
 
   if (loading) return <div>Loading...</div>;
@@ -289,11 +323,20 @@ const EditProfilePage = () => {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <button
                   type="button"
-                  style={{ ...saveAndExitButtonStyle, marginBottom: "10px" }}
-                  onClick={handleSaveAndExit}
+                  style={cancelButtonStyle}
+                  onClick={handleCancel}
                 >
-                  {isProfileChanged() ? "Save and Exit" : "Cancel"}
+                  Cancel
                 </button>
+                {isProfileChanged() && (
+                  <button
+                    type="button"
+                    style={saveAndExitButtonStyle}
+                    onClick={handleSaveAndExit}
+                  >
+                    Save and Exit
+                  </button>
+                )}
                 <button
                   type="button"
                   style={logoutButtonStyle}
@@ -349,11 +392,12 @@ const EditProfilePage = () => {
                     Email
                   </label>
                   <input
-                    style={readOnlyInputStyle}
+                    style={inputStyle}
                     type="email"
                     id="email"
+                    name="email"
                     value={userData?.email || ""}
-                    readOnly
+                    onChange={handleInputChange}
                   />
 
                   <div style={{ marginTop: "20px" }}>
@@ -422,7 +466,7 @@ const EditProfilePage = () => {
                               id={`cardType${index}`}
                               name={`cardData.${cardId}.type`}
                               value={card.type}
-                              onChange={handleInputChange}
+                              onChange={(e) => handleCardInputChange(e, cardId)}
                             >
                               <option value="">Select Card Type</option>
                               <option value="visa">Visa</option>
@@ -442,7 +486,7 @@ const EditProfilePage = () => {
                               id={`cardNumber${index}`}
                               name={`cardData.${cardId}.number`}
                               value={card.number}
-                              onChange={handleInputChange}
+                              onChange={(e) => handleCardInputChange(e, cardId)}
                             />
 
                             <label
@@ -457,7 +501,7 @@ const EditProfilePage = () => {
                               id={`expiryDate${index}`}
                               name={`cardData.${cardId}.expiry`}
                               value={card.expiry}
-                              onChange={handleInputChange}
+                              onChange={(e) => handleCardInputChange(e, cardId)}
                               placeholder="MM/YY"
                             />
 
@@ -473,7 +517,7 @@ const EditProfilePage = () => {
                               id={`billingAddress${index}`}
                               name={`cardData.${cardId}.billingAddress`}
                               value={card.billingAddress}
-                              onChange={handleInputChange}
+                              onChange={(e) => handleCardInputChange(e, cardId)}
                             />
                           </div>
                         )
@@ -484,66 +528,49 @@ const EditProfilePage = () => {
 
               {activeTab === "address" && (
                 <div>
-                  <h1
-                    style={{
-                      color: "#333",
-                      fontSize: "2rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {" "}
+                  <h1 style={{ color: "#333", fontSize: "2rem", fontWeight: "bold" }}>
                     Hey {userData?.firstName}!
                   </h1>
 
-                  <h2 style={{ color: "#333", fontWeight: "bold" }}>
-                    Home Address
-                  </h2>
-                  <label style={labelStyle} htmlFor="street">
-                    Street
-                  </label>
+                  <h2 style={{ color: "#333", fontWeight: "bold" }}>Home Address</h2>
+                  <label style={labelStyle} htmlFor="street">Street</label>
                   <input
                     style={inputStyle}
                     type="text"
                     id="street"
                     name="address.street"
-                    value={userData.address.street}
-                    onChange={handleInputChange}
+                    value={userData?.address?.street || ""}
+                    onChange={handleNestedInputChange}
                   />
 
-                  <label style={labelStyle} htmlFor="city">
-                    City
-                  </label>
+                  <label style={labelStyle} htmlFor="city">City</label>
                   <input
                     style={inputStyle}
                     type="text"
                     id="city"
                     name="address.city"
-                    value={userData.address.city}
-                    onChange={handleInputChange}
+                    value={userData?.address?.city || ""}
+                    onChange={handleNestedInputChange}
                   />
 
-                  <label style={labelStyle} htmlFor="state">
-                    State
-                  </label>
+                  <label style={labelStyle} htmlFor="state">State</label>
                   <input
                     style={inputStyle}
                     type="text"
                     id="state"
                     name="address.state"
-                    value={userData.address.state}
-                    onChange={handleInputChange}
+                    value={userData?.address?.state || ""}
+                    onChange={handleNestedInputChange}
                   />
 
-                  <label style={labelStyle} htmlFor="zip">
-                    ZIP Code
-                  </label>
+                  <label style={labelStyle} htmlFor="zip">ZIP Code</label>
                   <input
                     style={inputStyle}
                     type="text"
                     id="zip"
                     name="address.zip"
-                    value={userData.address.zip}
-                    onChange={handleInputChange}
+                    value={userData?.address?.zip || ""}
+                    onChange={handleNestedInputChange}
                   />
                 </div>
               )}

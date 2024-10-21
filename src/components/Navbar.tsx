@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "../context/UserContext";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -31,6 +31,15 @@ const Navbar: React.FC = () => {
     return () => unsubscribe();
   }, [setUser]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>; // Or any loading indicator
   }
@@ -55,11 +64,19 @@ const Navbar: React.FC = () => {
               <Link href="/editprofile" className="text-white mr-4">
                 My Account
               </Link>
+              <button onClick={handleLogout} className="text-white">
+                Logout
+              </button>
             </>
           ) : (
-            <Link href="/login" className="text-white">
-              Login
-            </Link>
+            <>
+              <Link href="/login" className="text-white mr-4">
+                Login
+              </Link>
+              <Link href="/register" className="text-white">
+                Signup
+              </Link>
+            </>
           )}
         </div>
       </div>

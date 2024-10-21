@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       secure: false, // true for 465, false for other ports
       auth: {
         user: 'octopuss732@gmail.com', // your email
-        pass: '', // your email password or app-specific password
+        pass: 'desq fkak srfj vonn', // your email password or app-specific password
       },
     });
 
