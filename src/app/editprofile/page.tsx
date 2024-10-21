@@ -8,6 +8,7 @@ import { updatePassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import ChangePassword from "../../components/ChangePassword";
 import { useUser } from "../../context/UserContext";
+import CryptoJS from 'crypto-js';
 
 const EditProfilePage = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -25,6 +26,16 @@ const EditProfilePage = () => {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
+            // Decrypt card data
+            if (data.cardData) {
+              const decryptedCardData = Object.fromEntries(
+                Object.entries(data.cardData).map(([cardId, encryptedCard]) => [
+                  cardId,
+                  decryptCardData(encryptedCard)
+                ])
+              );
+              data.cardData = decryptedCardData;
+            }
             setOriginalUserData(data);
             setUserData(data);
             setUser({
@@ -52,43 +63,43 @@ const EditProfilePage = () => {
     return () => unsubscribe();
   }, [setUser, router]);
 
+  // Add this function to decrypt card data
+  const decryptCardData = (encryptedCard) => {
+    const encryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+    return {
+      cardType: encryptedCard.cardType,
+      cardNumber: CryptoJS.AES.decrypt(encryptedCard.cardNumber, encryptionKey).toString(CryptoJS.enc.Utf8),
+      expirationDate: CryptoJS.AES.decrypt(encryptedCard.expirationDate, encryptionKey).toString(CryptoJS.enc.Utf8),
+      cvv: CryptoJS.AES.decrypt(encryptedCard.cvv, encryptionKey).toString(CryptoJS.enc.Utf8)
+    };
+  };
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
+  // Modify the handleInputChange function to handle nested cardData changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setUserData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const handleNestedInputChange = (e) => {
-    const { name, value } = e.target;
-    const [parent, child] = name.split('.');
-    setUserData((prevData) => ({
-      ...prevData,
-      [parent]: {
-        ...prevData[parent],
-        [child]: value,
-      },
-    }));
-  };
-
-  const handleCardInputChange = (e, cardId) => {
-    const { name, value } = e.target;
-    const [, field] = name.split('.');
-    setUserData((prevData) => ({
-      ...prevData,
-      cardData: {
-        ...prevData.cardData,
-        [cardId]: {
-          ...prevData.cardData[cardId],
-          [field]: value,
-        },
-      },
-    }));
+    setUserData((prevData) => {
+      if (name.startsWith('cardData.')) {
+        const [_, cardId, field] = name.split('.');
+        return {
+          ...prevData,
+          cardData: {
+            ...prevData.cardData,
+            [cardId]: {
+              ...prevData.cardData[cardId],
+              [field]: value
+            }
+          }
+        };
+      }
+      return {
+        ...prevData,
+        [name]: value,
+      };
+    });
   };
 
   const isProfileChanged = useCallback(() => {
@@ -96,12 +107,22 @@ const EditProfilePage = () => {
     return JSON.stringify(originalUserData) !== JSON.stringify(userData);
   }, [originalUserData, userData]);
 
+  // Modify handleSubmit to encrypt card data before saving
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const user = auth.currentUser;
       if (user) {
-        await updateDoc(doc(db, "users", user.uid), userData);
+        const updatedUserData = { ...userData };
+        if (updatedUserData.cardData) {
+          updatedUserData.cardData = Object.fromEntries(
+            Object.entries(updatedUserData.cardData).map(([cardId, card]) => [
+              cardId,
+              encryptCardData(card)
+            ])
+          );
+        }
+        await updateDoc(doc(db, "users", user.uid), updatedUserData);
         if (userData.password) {
           await updatePassword(user, userData.password);
         }
@@ -110,6 +131,17 @@ const EditProfilePage = () => {
       setError("Error updating profile");
       console.error(err);
     }
+  };
+
+  // Add this function to encrypt card data
+  const encryptCardData = (card) => {
+    const encryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+    return {
+      cardType: card.cardType,
+      cardNumber: CryptoJS.AES.encrypt(card.cardNumber, encryptionKey).toString(),
+      expirationDate: CryptoJS.AES.encrypt(card.expirationDate, encryptionKey).toString(),
+      cvv: CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString()
+    };
   };
 
   const handleLogout = async () => {
@@ -226,6 +258,13 @@ const EditProfilePage = () => {
     color: "#333",
   };
 
+  const readOnlyInputStyle = {
+    ...inputStyle,
+    backgroundColor: "#f0f0f0",
+    color: "#999",
+    cursor: "not-allowed",
+  };
+
   const labelStyle = {
     display: "block",
     marginBottom: "5px",
@@ -337,13 +376,6 @@ const EditProfilePage = () => {
                     Save and Exit
                   </button>
                 )}
-                <button
-                  type="button"
-                  style={logoutButtonStyle}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
               </div>
             </div>
 
@@ -392,12 +424,11 @@ const EditProfilePage = () => {
                     Email
                   </label>
                   <input
-                    style={inputStyle}
+                    style={readOnlyInputStyle}
                     type="email"
                     id="email"
-                    name="email"
                     value={userData?.email || ""}
-                    onChange={handleInputChange}
+                    readOnly
                   />
 
                   <div style={{ marginTop: "20px" }}>
@@ -432,14 +463,7 @@ const EditProfilePage = () => {
 
               {activeTab === "payment" && (
                 <div>
-                  <h1
-                    style={{
-                      color: "#333",
-                      fontSize: "2rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {" "}
+                  <h1 style={{ color: "#333", fontSize: "2rem", fontWeight: "bold" }}>
                     Hey {userData?.firstName}!
                   </h1>
 
@@ -455,18 +479,15 @@ const EditProfilePage = () => {
                               Card {index + 1}
                             </h3>
 
-                            <label
-                              style={labelStyle}
-                              htmlFor={`cardType${index}`}
-                            >
+                            <label style={labelStyle} htmlFor={`cardType${index}`}>
                               Card Type
                             </label>
                             <select
                               style={inputStyle}
                               id={`cardType${index}`}
-                              name={`cardData.${cardId}.type`}
-                              value={card.type}
-                              onChange={(e) => handleCardInputChange(e, cardId)}
+                              name={`cardData.${cardId}.cardType`}
+                              value={card.cardType.toLowerCase()} // Convert to lowercase for comparison
+                              onChange={handleInputChange}
                             >
                               <option value="">Select Card Type</option>
                               <option value="visa">Visa</option>
@@ -474,41 +495,44 @@ const EditProfilePage = () => {
                               <option value="amex">American Express</option>
                             </select>
 
-                            <label
-                              style={labelStyle}
-                              htmlFor={`cardNumber${index}`}
-                            >
+                            <label style={labelStyle} htmlFor={`cardNumber${index}`}>
                               Card Number
                             </label>
                             <input
                               style={inputStyle}
                               type="text"
                               id={`cardNumber${index}`}
-                              name={`cardData.${cardId}.number`}
-                              value={card.number}
-                              onChange={(e) => handleCardInputChange(e, cardId)}
+                              name={`cardData.${cardId}.cardNumber`}
+                              value={card.cardNumber}
+                              onChange={handleInputChange}
                             />
 
-                            <label
-                              style={labelStyle}
-                              htmlFor={`expiryDate${index}`}
-                            >
+                            <label style={labelStyle} htmlFor={`expiryDate${index}`}>
                               Expiration Date
                             </label>
                             <input
                               style={inputStyle}
                               type="text"
                               id={`expiryDate${index}`}
-                              name={`cardData.${cardId}.expiry`}
-                              value={card.expiry}
-                              onChange={(e) => handleCardInputChange(e, cardId)}
+                              name={`cardData.${cardId}.expirationDate`}
+                              value={card.expirationDate}
+                              onChange={handleInputChange}
                               placeholder="MM/YY"
                             />
 
-                            <label
-                              style={labelStyle}
-                              htmlFor={`billingAddress${index}`}
-                            >
+                            <label style={labelStyle} htmlFor={`cvv${index}`}>
+                              CVV
+                            </label>
+                            <input
+                              style={inputStyle}
+                              type="text"
+                              id={`cvv${index}`}
+                              name={`cardData.${cardId}.cvv`}
+                              value={card.cvv}
+                              onChange={handleInputChange}
+                            />
+
+                            <label style={labelStyle} htmlFor={`billingAddress${index}`}>
                               Billing Address
                             </label>
                             <input
@@ -517,7 +541,7 @@ const EditProfilePage = () => {
                               id={`billingAddress${index}`}
                               name={`cardData.${cardId}.billingAddress`}
                               value={card.billingAddress}
-                              onChange={(e) => handleCardInputChange(e, cardId)}
+                              onChange={handleInputChange}
                             />
                           </div>
                         )
@@ -540,7 +564,7 @@ const EditProfilePage = () => {
                     id="street"
                     name="address.street"
                     value={userData?.address?.street || ""}
-                    onChange={handleNestedInputChange}
+                    onChange={handleInputChange}
                   />
 
                   <label style={labelStyle} htmlFor="city">City</label>
@@ -550,7 +574,7 @@ const EditProfilePage = () => {
                     id="city"
                     name="address.city"
                     value={userData?.address?.city || ""}
-                    onChange={handleNestedInputChange}
+                    onChange={handleInputChange}
                   />
 
                   <label style={labelStyle} htmlFor="state">State</label>
@@ -560,7 +584,7 @@ const EditProfilePage = () => {
                     id="state"
                     name="address.state"
                     value={userData?.address?.state || ""}
-                    onChange={handleNestedInputChange}
+                    onChange={handleInputChange}
                   />
 
                   <label style={labelStyle} htmlFor="zip">ZIP Code</label>
@@ -570,18 +594,12 @@ const EditProfilePage = () => {
                     id="zip"
                     name="address.zip"
                     value={userData?.address?.zip || ""}
-                    onChange={handleNestedInputChange}
+                    onChange={handleInputChange}
                   />
                 </div>
               )}
             </div>
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Save Changes
-          </button>
         </form>
       </div>
     </div>
