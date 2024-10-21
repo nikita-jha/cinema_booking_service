@@ -3,7 +3,7 @@
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { sendPasswordResetEmail, signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence, setPersistence, onAuthStateChanged } from 'firebase/auth';
+import { sendPasswordResetEmail, signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence, setPersistence, onAuthStateChanged, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -14,6 +14,7 @@ const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [emailSentMessage, setEmailSentMessage] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const { setUser } = useUser();
 
@@ -106,15 +107,31 @@ const LoginPage = () => {
 
     const handleForgotPassword = async () => {
         if (!email) {
-            alert("Please enter your email first.");
+            setErrorMessage("Please enter your email first.");
+            return;
+        }
+
+        const emailToCheck = email.trim();
+        console.log("Checking email:", emailToCheck); // Debugging log
+
+        const signInMethods = await fetchSignInMethodsForEmail(auth, emailToCheck);
+        console.log("Sign-in methods:", signInMethods); // Debugging log
+
+        if (signInMethods.length === 0) {
+            setErrorMessage("No user found with this email address.");
             return;
         }
 
         try {
             await sendPasswordResetEmail(auth, email);
-            alert("Password reset email sent! Check your inbox.");
+            //alert("Password reset email sent! Check your inbox.");
+            setEmailSentMessage("Password reset email sent! Check your inbox.");
+            setErrorMessage('');
+
         } catch (error) {
             console.error("Error sending password reset email:", error);
+            setErrorMessage("Error sending password reset email. Please try again.")
+            setEmailSentMessage('');
         }
     };
 
@@ -175,6 +192,7 @@ const LoginPage = () => {
                             </div>
                         </form>
                         {errorMessage && <p className="text-red-500 mt-4">{errorMessage}</p>}
+                        {emailSentMessage && <p className="text-green-500 mt-4">{emailSentMessage}</p>}
                         <div className="mt-6 flex justify-between text-lg text-blue-500">
                             <Link href="/register" className="hover:underline">Create Account</Link>
                             <a href="#" className="hover:underline" onClick={handleForgotPassword}>
