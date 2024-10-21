@@ -16,7 +16,10 @@ const EmailConfirmationPage = () => {
                 await user.reload();
                 if (user.emailVerified) {
                     setIsVerified(true);
-                    setTimeout(() => router.push('/login'), 3000);
+                    // Automatically sign out and redirect to login after verification
+                    auth.signOut().then(() => {
+                        setTimeout(() => router.push('/login'), 3000);
+                    });
                 }
             }
         };
@@ -42,7 +45,7 @@ const EmailConfirmationPage = () => {
                             <p className="text-xl mb-4 text-gray-800">Please check your inbox and click the verification link to confirm your email address.</p>
                         )}
 
-                        <p className="text-xl mt-6 text-gray-500">Once your email is verified, you will be automatically redirected to the login page.</p>
+                        <p className="text-xl mt-6 text-gray-500">Once your email is verified, you can proceed to log in.</p>
                     </div>
                 </div>
             </div>
