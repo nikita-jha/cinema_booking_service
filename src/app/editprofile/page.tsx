@@ -337,13 +337,6 @@ const EditProfilePage = () => {
                     Save and Exit
                   </button>
                 )}
-                <button
-                  type="button"
-                  style={logoutButtonStyle}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
               </div>
             </div>
 
@@ -576,12 +569,6 @@ const EditProfilePage = () => {
               )}
             </div>
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Save Changes
-          </button>
         </form>
       </div>
     </div>
