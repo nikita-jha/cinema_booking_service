@@ -11,14 +11,14 @@ export default async function handler(req, res) {
       port: 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: 'octopuss732@gmail.com', // your email
-        pass: 'desq fkak srfj vonn', // your email password or app-specific password
+        user: 'nikitajha1912@gmail.com', // your email
+        pass: 'jrlv jjos xotz qfpd', // your email password or app-specific password
       },
     });
 
     // Define email options
     const mailOptions = {
-      from: 'octopuss732@gmail.com',
+      from: 'nikitajha1912@gmail.com',
       to: email,
       subject: subject,
       text: message,

@@ -5,10 +5,11 @@ import Navbar from '../../components/Navbar';
 import { useRouter } from 'next/navigation';
 import { auth } from '../../lib/firebase/config'; 
 import { Button } from '@mui/material';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import CryptoJS from 'crypto-js'; 
+
 
 
 const RegisterPage: React.FC = () => {
@@ -211,8 +212,13 @@ const router = useRouter(); // Initialize the router
         promotionalEmails: formData.promotionalEmails,
         userType: "Customer",
         status: "active",
+<<<<<<< HEAD
         cardData: encryptedCardData, // Store encrypted card data
         emailVerification: "unverified", // Add emailVerification field 
+=======
+        cardData: encryptedCardData // Store encrypted card data,
+        
+>>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
       };
       
 

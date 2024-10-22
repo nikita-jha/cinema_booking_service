@@ -10,6 +10,7 @@ import ChangePassword from "../../components/ChangePassword";
 import { useUser} from "../../context/UserContext";
 import CryptoJS from 'crypto-js';
 import { User } from "firebase/auth";
+<<<<<<< HEAD
 import useRequireAuth from '../../components/RequireAuth';
 
 const EditProfilePage = () => {
@@ -17,6 +18,15 @@ const EditProfilePage = () => {
   interface UserData {
     firstName?: string;
     lastName?: string;
+=======
+
+
+const EditProfilePage = () => {
+  interface UserData {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+>>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
     email?: string;
     password?: string;
     userType?: string; // e.g., admin, regular user, etc.
@@ -46,6 +56,107 @@ const EditProfilePage = () => {
   const router = useRouter();
   const { setUser } = useUser();
 
+  const [validationMessages, setValidationMessages] = useState({
+    firstName: "",
+    lastName: "",
+    password: "",
+    phone: "",
+    cardNumber: "",
+    expirationDate: "",
+    cvv: "",
+    "address.zip": "",
+  });
+  
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  const validateField = (name: string, value: string) => {
+    let message = "";
+    switch (name) {
+      case "firstName":
+      case "lastName":
+        if (!/^[a-zA-Z]+$/.test(value)) {
+          message = "Only letters are allowed.";
+        }
+        break;
+      case "password":
+        if (!/(?=.*[0-9])(?=.*[a-zA-Z])/.test(value)) {
+          message = "Password should contain letters and at least one number.";
+        } else if (value.length < 6) {
+          message = "Password should be at least 6 characters long.";
+        }
+        break;
+      case "phone":
+        if (!/^\d{10}$/.test(value)) {
+          message = "Phone number should be exactly 10 digits.";
+        }
+        break;
+      case "address.zip":
+        if (!/^\d{5}$/.test(value)) {
+          message = "ZIP code should be exactly 5 digits.";
+        }
+        break;
+      default:
+        break;
+    }
+    setValidationMessages((prevMessages) => ({
+      ...prevMessages,
+      [name]: message,
+    }));
+    validateForm();
+  };
+  
+  const validateCardField = (index: number, name: string, value: string) => {
+    let message = "";
+    switch (name) {
+      case "cardNumber":
+        if (userData?.cardData?.[index]?.cardType === "visa" || userData?.cardData?.[index]?.cardType === "mastercard") {
+          if (!/^\d{16}$/.test(value)) {
+            message = "Card number should have 16 digits.";
+          }
+        } else if (userData?.cardData?.[index]?.cardType === "amex") {
+          if (!/^\d{15}$/.test(value)) {
+            message = "Card number should have 15 digits.";
+          }
+        }
+        break;
+      case "expirationDate":
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(value)) {
+          message = "Expiration date should be in MM/YY format.";
+        } else {
+          const [month, year] = value.split("/").map(Number);
+          const currentDate = new Date();
+          const expirationDate = new Date(`20${year}`, month - 1);
+          if (expirationDate <= currentDate) {
+            message = "Expiration date should be in the future.";
+          }
+        }
+        break;
+      case "cvv":
+        if (userData?.cardData?.[index]?.cardType === "visa" || userData?.cardData?.[index]?.cardType === "mastercard") {
+          if (!/^\d{3}$/.test(value)) {
+            message = "CVV should have 3 digits.";
+          }
+        } else if (userData?.cardData?.[index]?.cardType === "amex") {
+          if (!/^\d{4}$/.test(value)) {
+            message = "CVV should have 4 digits.";
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    setValidationMessages((prevMessages) => ({
+      ...prevMessages,
+      [`card${index}_${name}`]: message,
+    }));
+    validateForm();
+  };
+
+  const validateForm = () => {
+    const isValid = Object.values(validationMessages).every((message) => message === "");
+    setIsFormValid(isValid);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -69,7 +180,8 @@ const EditProfilePage = () => {
               id: firebaseUser.uid,
               name: data.name || '',
               email: firebaseUser.email || '',
-              userType: data.userType
+              userType: data.userType,
+              phone: data.phone || ''
             });
           } else {
             setError("User data not found");
@@ -114,15 +226,22 @@ const EditProfilePage = () => {
     setActiveTab(tab);
   };
 
+<<<<<<< HEAD
   // Modify the handleInputChange function to handle nested cardData changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserData((prevData) => {
       // If prevData is null, initialize it as an empty object
+=======
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUserData((prevData) => {
+>>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
       if (!prevData) {
         prevData = {};
       }
   
+<<<<<<< HEAD
       if (name.startsWith('cardData.')) {
         const [_, cardId, field] = name.split('.');
         return {
@@ -133,6 +252,16 @@ const EditProfilePage = () => {
               ...prevData.cardData?.[cardId], // Ensure nested object exists
               [field]: value,
             },
+=======
+      const keys = name.split('.');
+      if (keys.length === 2) {
+        const [parentKey, childKey] = keys;
+        return {
+          ...prevData,
+          [parentKey]: {
+            ...prevData[parentKey],
+            [childKey]: value,
+>>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
           },
         };
       }
@@ -142,6 +271,24 @@ const EditProfilePage = () => {
         [name]: value,
       };
     });
+    validateField(name, value);
+  };
+
+  const handleCardInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setUserData((prevData) => {
+      if (!prevData) {
+        prevData = {};
+      }
+  
+      const updatedCardData = { ...prevData.cardData };
+      updatedCardData[index] = { ...updatedCardData[index], [name]: value };
+      return {
+        ...prevData,
+        cardData: updatedCardData,
+      };
+    });
+    validateCardField(index, name, value);
   };
   
   
@@ -154,6 +301,12 @@ const EditProfilePage = () => {
   // Modify handleSubmit to encrypt card data before saving
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!isFormValid) {
+      console.log('Form is not valid');
+      return;
+    }
+
     try {
       const user = auth.currentUser;
       if (user && userData) {  // Check if userData is not null
@@ -440,7 +593,7 @@ const EditProfilePage = () => {
                 >
                   Cancel
                 </button>
-                {isProfileChanged() && (
+                {isProfileChanged() && isFormValid && (
                   <button
                     type="button"
                     style={saveAndExitButtonStyle}
@@ -480,6 +633,7 @@ const EditProfilePage = () => {
                     value={userData?.firstName || ""}
                     onChange={handleInputChange}
                   />
+                  {validationMessages.firstName && <p className="text-red-500 text-sm mt-1">{validationMessages.firstName}</p>}
 
                   <label style={labelStyle} htmlFor="lastName">
                     Last Name
@@ -492,6 +646,20 @@ const EditProfilePage = () => {
                     value={userData?.lastName || ""}
                     onChange={handleInputChange}
                   />
+                  {validationMessages.lastName && <p className="text-red-500 text-sm mt-1">{validationMessages.lastName}</p>}
+
+                  <label style={labelStyle} htmlFor="phone">
+                    Phone Number
+                  </label>
+                  <input
+                    style={inputStyle}
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value={userData?.phone || ""}
+                    onChange={handleInputChange}
+                  />
+                  {validationMessages.phone && <p className="text-red-500 text-sm mt-1">{validationMessages.phone}</p>}
 
                   <label style={labelStyle} htmlFor="email">
                     Email
@@ -558,10 +726,17 @@ const EditProfilePage = () => {
                             <select
                               style={inputStyle}
                               id={`cardType${index}`}
+<<<<<<< HEAD
                               name={`cardData.${cardId}.cardType`}
                               value={card.cardType ? card.cardType.toLowerCase() : ""} // Convert to lowercase for comparison
                               onChange={handleInputChange}
                             >
+=======
+                              name="cardType"
+                              value={card.cardType ? card.cardType.toLowerCase() : ""} // Convert to lowercase for comparison
+                              onChange={(e) => handleCardInputChange(index, e)}
+                              >
+>>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
                               <option value="">Select Card Type</option>
                               <option value="visa">Visa</option>
                               <option value="mastercard">MasterCard</option>
@@ -575,10 +750,11 @@ const EditProfilePage = () => {
                               style={inputStyle}
                               type="text"
                               id={`cardNumber${index}`}
-                              name={`cardData.${cardId}.cardNumber`}
+                              name="cardNumber"
                               value={card.cardNumber}
-                              onChange={handleInputChange}
-                            />
+                              onChange={(e) => handleCardInputChange(index, e)}
+                              />
+                             {validationMessages[`card${index}_cardNumber`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_cardNumber`]}</p>}
 
                             <label style={labelStyle} htmlFor={`expiryDate${index}`}>
                               Expiration Date
@@ -587,11 +763,12 @@ const EditProfilePage = () => {
                               style={inputStyle}
                               type="text"
                               id={`expiryDate${index}`}
-                              name={`cardData.${cardId}.expirationDate`}
+                              name="expirationDate"
                               value={card.expirationDate}
-                              onChange={handleInputChange}
+                              onChange={(e) => handleCardInputChange(index, e)}
                               placeholder="MM/YY"
                             />
+                            {validationMessages[`card${index}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_expirationDate`]}</p>}
 
                             <label style={labelStyle} htmlFor={`cvv${index}`}>
                               CVV
@@ -600,10 +777,11 @@ const EditProfilePage = () => {
                               style={inputStyle}
                               type="text"
                               id={`cvv${index}`}
-                              name={`cardData.${cardId}.cvv`}
+                              name="cvv"
                               value={card.cvv}
-                              onChange={handleInputChange}
-                            />
+                              onChange={(e) => handleCardInputChange(index, e)}
+                              />
+                              {validationMessages[`card${index}_cvv`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_cvv`]}</p>}
 
                             <label style={labelStyle} htmlFor={`billingAddress${index}`}>
                               Billing Address
@@ -614,8 +792,8 @@ const EditProfilePage = () => {
                               id={`billingAddress${index}`}
                               name={`cardData.${cardId}.billingAddress`}
                               value={card.billingAddress}
-                              onChange={handleInputChange}
-                            />
+                              onChange={(e) => handleCardInputChange(index, e)}
+                              />
                           </div>
                         )
                       )}
@@ -651,14 +829,24 @@ const EditProfilePage = () => {
                   />
 
                   <label style={labelStyle} htmlFor="state">State</label>
-                  <input
+                  <select
                     style={inputStyle}
-                    type="text"
                     id="state"
                     name="address.state"
                     value={userData?.address?.state || ""}
                     onChange={handleInputChange}
-                  />
+                  >
+                    <option value="">Select State</option>
+                    {[
+                      "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+                      "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+                      "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+                      "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+                      "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+                    ].map((state) => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
 
                   <label style={labelStyle} htmlFor="zip">ZIP Code</label>
                   <input
@@ -669,6 +857,7 @@ const EditProfilePage = () => {
                     value={userData?.address?.zip || ""}
                     onChange={handleInputChange}
                   />
+                  {validationMessages["address.zip"] && <p className="text-red-500 text-sm mt-1">{validationMessages["address.zip"]}</p>}
                 </div>
               )}
             </div>
