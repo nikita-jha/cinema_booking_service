@@ -10,9 +10,10 @@ import ChangePassword from "../../components/ChangePassword";
 import { useUser} from "../../context/UserContext";
 import CryptoJS from 'crypto-js';
 import { User } from "firebase/auth";
-
+import useRequireAuth from '../../components/RequireAuth';
 
 const EditProfilePage = () => {
+  useRequireAuth();
   interface UserData {
     firstName?: string;
     lastName?: string;

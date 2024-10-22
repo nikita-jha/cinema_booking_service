@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
+import useRequireAuth from '../../components/RequireAuth';
 
 const CHILD_PRICE = 10.00;
 const ADULT_PRICE = 20.00;
@@ -11,6 +12,7 @@ const SENIOR_PRICE = 12.00;
 const TAX_RATE = 0.07;
 
 const OrderSummaryPage = () => {
+  useRequireAuth();
   const searchParams = useSearchParams();
   const numTickets = searchParams.get('numTickets');
   const ages = searchParams.get('ages');

@@ -7,8 +7,10 @@ import { onAuthStateChanged } from "firebase/auth"; // Firebase Auth
 import { doc, getDoc } from "firebase/firestore"; // Firebase Firestore
 import Navbar from "../../components/Navbar";
 import Link from "next/link";
+import useRequireAuth from '../../components/RequireAuth';
 
 const AdminPortalHomePage = () => {
+  useRequireAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false); // Track if user is an admin
   const [isLoading, setIsLoading] = useState(true); // Track loading state

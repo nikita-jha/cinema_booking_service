@@ -4,8 +4,10 @@ import { useSearchParams } from 'next/navigation';
 import React from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
+import useRequireAuth from '../../components/RequireAuth';
 
 const generateOrderNumber = () => {
+  useRequireAuth();
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let orderNumber = '';
   for (let i = 0; i < 12; i++) {

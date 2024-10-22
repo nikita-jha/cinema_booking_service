@@ -41,10 +41,14 @@ const LoginPage = () => {
                         email: firebaseUser.email || '',
                         userType: userData.userType,
                     });
-                    if (userData.userType === 'Customer') {
-                        router.push('/');
-                    } else {
-                        router.push('/adminHome');
+                    if (userData.userType.toLowerCase() === 'customer'
+                        && userData.status == 'active'
+                        && firebaseUser.emailVerified) {
+                    router.push('/');
+                    } else if (userData.userType.toLowerCase() === 'admin'
+                        && userData.status == 'active'
+                        && firebaseUser.emailVerified) {
+                    router.push('/adminHome');
                     }
                 }
             } else {
@@ -59,19 +63,36 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage('');
-
+    
         try {
+            // Set persistence based on "Remember Me" option
             await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
             
-            const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+            // Sign in the user
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
+    
+            // Check if the email is verified
+
+    
+            // Retrieve the user document from Firestore
+            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                const userType = userData.userType;
-
-                localStorage.setItem("user", JSON.stringify(userData));
-
-                // If "Remember Me" is checked, store email and password
+                
+                // Check if the account is active
+                if (userData.status !== 'active') {
+                    setErrorMessage("Your account is not active. Please contact support for further assistance.");
+                    await auth.signOut();  // Sign out the user
+                    return;  // Stop execution if the account is not active
+                }
+                if (!firebaseUser.emailVerified) {
+                    setErrorMessage("Your email is not verified. Please verify your email before logging in.");
+                    await auth.signOut();  // Sign out the user
+                    return;  // Stop execution if the email is not verified
+                }
+    
+                // Store user data in localStorage if "Remember Me" is checked
                 if (rememberMe) {
                     localStorage.setItem("rememberedEmail", email);
                     localStorage.setItem("rememberedPassword", password);
@@ -81,29 +102,37 @@ const LoginPage = () => {
                     localStorage.removeItem("rememberedPassword");
                     localStorage.setItem("rememberMe", 'false');
                 }
-
+    
+                // Set the user context
                 setUser({
-                    id: userCredential.user.uid,
+                    id: firebaseUser.uid,
                     name: `${userData.firstName} ${userData.lastName}` || '',
-                    email: userCredential.user.email || '',
-                    userType: userType,
+                    email: firebaseUser.email || '',
+                    userType: userData.userType,
                 });
-
-                if (userType.toLowerCase() === 'customer') {
+    
+                // Redirect based on user type
+                if (userData.userType.toLowerCase() === 'customer'
+                        && userData.status == 'active'
+                        && userData.emailVerified == 'verified') {
                     router.push('/');
-                } else if (userType.toLowerCase() === 'admin') {
+                } else if (userData.userType.toLowerCase() === 'admin'
+                        && userData.status == 'active'
+                        && userData.emailVerified == 'verified') {
                     router.push('/adminHome');
                 }
-
+    
             } else {
                 console.error("User document not found");
                 setErrorMessage("User data not found. Please contact support.");
             }
+    
         } catch (error) {
             console.error("Login error:", error);
             setErrorMessage("Login failed. Please check your email and password.");
         }
     };
+    
 
     const handleForgotPassword = async () => {
         if (!email) {
