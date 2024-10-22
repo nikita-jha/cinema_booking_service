@@ -5,10 +5,11 @@ import Navbar from '../../components/Navbar';
 import { useRouter } from 'next/navigation';
 import { auth } from '../../lib/firebase/config'; 
 import { Button } from '@mui/material';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import CryptoJS from 'crypto-js'; 
+
 
 
 const RegisterPage: React.FC = () => {
