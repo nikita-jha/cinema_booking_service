@@ -214,10 +214,6 @@ const router = useRouter(); // Initialize the router
         status: "active",
         cardData: encryptedCardData, // Store encrypted card data
         emailVerification: "unverified", // Add emailVerification field 
-=========
-        cardData: encryptedCardData // Store encrypted card data,
-        
->>>>>>>>> Temporary merge branch 2
       };
       
 
