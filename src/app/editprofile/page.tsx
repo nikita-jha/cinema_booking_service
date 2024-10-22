@@ -12,14 +12,9 @@ import CryptoJS from 'crypto-js';
 import { User } from "firebase/auth";
 import useRequireAuth from '../../components/RequireAuth';
 
+
 const EditProfilePage = () => {
   useRequireAuth();
-  interface UserData {
-    firstName?: string;
-    lastName?: string;
-
-
-const EditProfilePage = () => {
   interface UserData {
     firstName?: string;
     lastName?: string;
