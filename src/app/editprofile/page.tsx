@@ -16,6 +16,7 @@ const EditProfilePage = () => {
   interface UserData {
     firstName?: string;
     lastName?: string;
+    phone?: string;
     email?: string;
     password?: string;
     userType?: string; // e.g., admin, regular user, etc.
@@ -68,7 +69,8 @@ const EditProfilePage = () => {
               id: firebaseUser.uid,
               name: data.name || '',
               email: firebaseUser.email || '',
-              userType: data.userType
+              userType: data.userType,
+              phone: data.phone || ''
             });
           } else {
             setError("User data not found");
@@ -491,7 +493,17 @@ const EditProfilePage = () => {
                     value={userData?.lastName || ""}
                     onChange={handleInputChange}
                   />
-
+                  <label style={labelStyle} htmlFor="phone">
+                    Phone Number
+                  </label>
+                  <input
+                    style={inputStyle}
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value={userData?.phone || ""}
+                    onChange={handleInputChange}
+                  />
                   <label style={labelStyle} htmlFor="email">
                     Email
                   </label>
