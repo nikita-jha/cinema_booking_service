@@ -15,12 +15,16 @@ const Navbar: React.FC = () => {
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUser({
-            id: firebaseUser.uid,
-            name: userData.name || '',
-            email: firebaseUser.email || '',
-            userType: userData.userType
-          });
+          if (firebaseUser.emailVerified) {
+            // Only set the user if the email is verified
+            setUser({
+              id: firebaseUser.uid,
+              name: userData.name || '',
+              email: firebaseUser.email || '',
+              userType: userData.userType,
+              emailVerified: firebaseUser.emailVerified
+            });
+          }
         }
       } else {
         setUser(null);
@@ -54,7 +58,7 @@ const Navbar: React.FC = () => {
           <Link href="/" className="text-white mr-4">
             Home
           </Link>
-          {user ? (
+          {user && user.emailVerified ? (  // Add emailVerified check
             <>
               {user.userType === "Admin" && (
                 <Link href="/adminHome" className="text-white mr-4">

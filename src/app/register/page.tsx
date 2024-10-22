@@ -212,7 +212,8 @@ const router = useRouter(); // Initialize the router
         promotionalEmails: formData.promotionalEmails,
         userType: "Customer",
         status: "active",
-        cardData: encryptedCardData // Store encrypted card data
+        cardData: encryptedCardData // Store encrypted card data,
+        
       };
 
       // Store user data in Firestore
