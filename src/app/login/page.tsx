@@ -20,22 +20,32 @@ const LoginPage = () => {
     const { setUser, user } = useUser(); // Access user context
 
     useEffect(() => {
-        const savedEmail = localStorage.getItem("rememberedEmail");
-        const savedPassword = localStorage.getItem("rememberedPassword");
-        const savedRememberMe = localStorage.getItem("rememberMe") === 'true';
-
-        if (savedEmail && savedPassword && savedRememberMe) {
-            setEmail(savedEmail);
-            setPassword(savedPassword);
-            setRememberMe(true);
-        }
-
+        const checkRememberMe = () => {
+            const savedEmail = localStorage.getItem("rememberedEmail");
+            const savedPassword = localStorage.getItem("rememberedPassword");
+            const savedRememberMe = localStorage.getItem("rememberMe") === 'true';
+    
+            if (savedEmail && savedPassword && savedRememberMe) {
+                setEmail(savedEmail);
+                setPassword(savedPassword);
+                setRememberMe(true);
+            }
+        };
+    
+        checkRememberMe();
+    
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
+            if (!firebaseUser) {
+                setUser(null);
+                return;
+            }
+    
+            try {
                 const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     const emailVerified = firebaseUser.emailVerified;
+    
                     setUser({
                         id: firebaseUser.uid,
                         name: userData.name || '',
@@ -43,28 +53,28 @@ const LoginPage = () => {
                         userType: userData.userType,
                         emailVerified: emailVerified, // Track if email is verified
                     });
-
+    
                     if (emailVerified) {
-                        // Redirect to appropriate page only if the email is verified
-                        if (userData.userType.toLowerCase() === 'customer'
-                        && userData.status == 'active'
-                        && firebaseUser.emailVerified) {
-                        router.push('/');
-                        } else if (userData.userType === 'Admin') if (userData.userType.toLowerCase() === 'admin'
-                        && userData.status == 'active'
-                        && firebaseUser.emailVerified) {
-                        router.push('/adminHome');
+                        // Redirect based on user type
+                        if (userData.userType.toLowerCase() === 'customer' && userData.status === 'active') {
+                            router.push('/');
+                        } else if (userData.userType.toLowerCase() === 'admin' && userData.status === 'active') {
+                            router.push('/adminHome');
                         }
                     }
+                } else {
+                    setErrorMessage("User data not found. Please contact support.");
                 }
-            } else {
-                setUser(null);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                setErrorMessage("There was an issue logging in. Please try again.");
             }
         });
-
+    
         return () => unsubscribe();
     }, [setUser, router]);
-
+    
+    
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -88,7 +98,8 @@ const LoginPage = () => {
                 const emailVerified = userCredential.user.emailVerified;
 
                 if (!emailVerified) {
-                    setVerificationMessage("This email was never verified. Please create a new account with this email.");
+                    setVerificationMessage("This email was never verified. Please verify your email and then try logging in again.");
+                    await auth.signOut();  // Sign out the user
                     return;
                 }
                 // Check if the account is active
@@ -232,6 +243,7 @@ const LoginPage = () => {
                         </form>
                         {errorMessage && <p className="text-red-500 mt-4">{errorMessage}</p>}
                         {emailSentMessage && <p className="text-green-500 mt-4">{emailSentMessage}</p>}
+                        {verificationMessage && <p className="text-red-500 mt-4">{verificationMessage}</p>}
                         <div className="mt-6 flex justify-between text-lg text-blue-500">
                             <Link href="/register" className="hover:underline">Create Account</Link>
                             <a href="#" className="hover:underline" onClick={handleForgotPassword}>
