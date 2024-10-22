@@ -220,6 +220,7 @@ const EditProfilePage = () => {
     cardNumber: string;
     expirationDate: string;
     cvv: string;
+    billingAddress: string;
   }
   
   const decryptCardData = (encryptedCard: EncryptedCardData) => {
@@ -229,6 +230,7 @@ const EditProfilePage = () => {
       cardNumber: CryptoJS.AES.decrypt(encryptedCard.cardNumber, encryptionKey).toString(CryptoJS.enc.Utf8),
       expirationDate: CryptoJS.AES.decrypt(encryptedCard.expirationDate, encryptionKey).toString(CryptoJS.enc.Utf8),
       cvv: CryptoJS.AES.decrypt(encryptedCard.cvv, encryptionKey).toString(CryptoJS.enc.Utf8),
+      billingAddress: encryptedCard.billingAddress, // Add this line
     };
   };
   
@@ -276,7 +278,9 @@ const EditProfilePage = () => {
         cardData: updatedCardData,
       };
     });
-    validateCardField(cardId, name, value);
+    if (name !== 'billingAddress') {  // Don't validate billing address
+      validateCardField(cardId, name, value);
+    }
   };
   
   
@@ -339,6 +343,7 @@ const EditProfilePage = () => {
       cardNumber: CryptoJS.AES.encrypt(card.cardNumber || '', encryptionKey).toString(),
       expirationDate: CryptoJS.AES.encrypt(card.expirationDate || '', encryptionKey).toString(),
       cvv: CryptoJS.AES.encrypt(card.cvv || '', encryptionKey).toString(),
+      billingAddress: card.billingAddress, // Add this line
     };
   };
 
@@ -776,10 +781,10 @@ const EditProfilePage = () => {
                               style={inputStyle}
                               type="text"
                               id={`billingAddress${index}`}
-                              name={`cardData.${cardId}.billingAddress`}
-                              value={card.billingAddress}
+                              name="billingAddress"
+                              value={card.billingAddress || ""} // This line ensures the billing address is populated
                               onChange={(e) => handleCardInputChange(cardId, e)}
-                              />
+                            />
                           </div>
                         )
                       )}

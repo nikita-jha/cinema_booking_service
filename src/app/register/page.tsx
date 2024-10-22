@@ -32,9 +32,9 @@ const router = useRouter(); // Initialize the router
     userType: "Customer", // Set default userType to "customer"
   });
   const [cardData, setCardData] = useState([
-    { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
-    { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
-    { cardType: "", cardNumber: "", expirationDate: "", cvv: "" },
+    { cardType: "", cardNumber: "", expirationDate: "", cvv: "", billingAddress: "" },
+    { cardType: "", cardNumber: "", expirationDate: "", cvv: "", billingAddress: "" },
+    { cardType: "", cardNumber: "", expirationDate: "", cvv: "", billingAddress: "" },
   ]);
   const [validationMessages, setValidationMessages] = useState({
     email: "",
@@ -198,7 +198,8 @@ const router = useRouter(); // Initialize the router
         cardType: card.cardType,
         cardNumber: card.cardNumber ? CryptoJS.AES.encrypt(card.cardNumber, encryptionKey).toString() : '',
         expirationDate: card.expirationDate ? CryptoJS.AES.encrypt(card.expirationDate, encryptionKey).toString() : '',
-        cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : ''
+        cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : '',
+        billingAddress: card.billingAddress
       }));
 
       // Prepare user data for Firestore
@@ -212,12 +213,8 @@ const router = useRouter(); // Initialize the router
         promotionalEmails: formData.promotionalEmails,
         userType: "Customer",
         status: "active",
-        cardData: encryptedCardData, // Store encrypted card data
+        cardData: encryptedCardData, // Store encrypted card data including billing address
         emailVerification: "unverified", // Add emailVerification field 
-=========
-        cardData: encryptedCardData // Store encrypted card data,
-        
->>>>>>>>> Temporary merge branch 2
       };
       
 
@@ -526,6 +523,8 @@ const router = useRouter(); // Initialize the router
                       id={`billingAddress${index}`}
                       name="billingAddress"
                       placeholder="Enter your billing address"
+                      value={card.billingAddress}
+                      onChange={(e) => handleCardInputChange(index, e)}
                     />
                   </div>
                 ))}
