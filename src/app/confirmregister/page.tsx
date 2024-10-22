@@ -1,8 +1,9 @@
 "use client";
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '../../lib/firebase/config';
+import { db } from '../../lib/firebase/config';
+import { doc, updateDoc } from 'firebase/firestore'; 
 import Navbar from '../../components/Navbar';
 
 const EmailConfirmationPage = () => {
@@ -13,9 +14,16 @@ const EmailConfirmationPage = () => {
         const checkEmailVerification = async () => {
             const user = auth.currentUser;
             if (user) {
-                await user.reload();
+                await user.reload(); // Reload user to get updated emailVerified status
                 if (user.emailVerified) {
                     setIsVerified(true);
+
+                    // Update emailVerification status to 'verified' in Firestore
+                    const userDocRef = doc(db, 'users', user.uid);
+                    await updateDoc(userDocRef, {
+                        emailVerification: "verified"
+                    });
+
                     // Automatically sign out and redirect to login after verification
                     auth.signOut().then(() => {
                         setTimeout(() => router.push('/login'), 3000);
