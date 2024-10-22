@@ -10,15 +10,6 @@ import ChangePassword from "../../components/ChangePassword";
 import { useUser} from "../../context/UserContext";
 import CryptoJS from 'crypto-js';
 import { User } from "firebase/auth";
-<<<<<<< HEAD
-import useRequireAuth from '../../components/RequireAuth';
-
-const EditProfilePage = () => {
-  useRequireAuth();
-  interface UserData {
-    firstName?: string;
-    lastName?: string;
-=======
 
 
 const EditProfilePage = () => {
@@ -26,7 +17,6 @@ const EditProfilePage = () => {
     firstName?: string;
     lastName?: string;
     phone?: string;
->>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
     email?: string;
     password?: string;
     userType?: string; // e.g., admin, regular user, etc.
@@ -67,7 +57,7 @@ const EditProfilePage = () => {
     "address.zip": "",
   });
   
-  const [isFormValid, setIsFormValid] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(true);  // Initialize as true
 
   const validateField = (name: string, value: string) => {
     let message = "";
@@ -152,10 +142,30 @@ const EditProfilePage = () => {
     validateForm();
   };
 
-  const validateForm = () => {
-    const isValid = Object.values(validationMessages).every((message) => message === "");
+  const validateForm = useCallback(() => {
+    const isPersonalInfoValid = 
+      !validationMessages.firstName &&
+      !validationMessages.lastName &&
+      !validationMessages.phone;
+
+    const isAddressValid = !validationMessages["address.zip"];
+
+    const isCardDataValid = userData?.cardData
+      ? Object.entries(userData.cardData).every(([cardId, card]) => 
+          !validationMessages[`card${cardId}_cardNumber`] &&
+          !validationMessages[`card${cardId}_expirationDate`] &&
+          !validationMessages[`card${cardId}_cvv`]
+        )
+      : true;
+
+    const isValid = isPersonalInfoValid && isAddressValid && isCardDataValid;
     setIsFormValid(isValid);
-  };
+    return isValid;
+  }, [validationMessages, userData]);
+
+  useEffect(() => {
+    validateForm();
+  }, [validateForm, userData]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -226,33 +236,11 @@ const EditProfilePage = () => {
     setActiveTab(tab);
   };
 
-<<<<<<< HEAD
-  // Modify the handleInputChange function to handle nested cardData changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserData((prevData) => {
-      // If prevData is null, initialize it as an empty object
-=======
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUserData((prevData) => {
->>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
-      if (!prevData) {
-        prevData = {};
-      }
+      if (!prevData) return prevData;
   
-<<<<<<< HEAD
-      if (name.startsWith('cardData.')) {
-        const [_, cardId, field] = name.split('.');
-        return {
-          ...prevData,
-          cardData: {
-            ...prevData.cardData,
-            [cardId]: {
-              ...prevData.cardData?.[cardId], // Ensure nested object exists
-              [field]: value,
-            },
-=======
       const keys = name.split('.');
       if (keys.length === 2) {
         const [parentKey, childKey] = keys;
@@ -261,7 +249,6 @@ const EditProfilePage = () => {
           [parentKey]: {
             ...prevData[parentKey],
             [childKey]: value,
->>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
           },
         };
       }
@@ -274,21 +261,19 @@ const EditProfilePage = () => {
     validateField(name, value);
   };
 
-  const handleCardInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleCardInputChange = (cardId: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setUserData((prevData) => {
-      if (!prevData) {
-        prevData = {};
-      }
+      if (!prevData) return prevData;
   
       const updatedCardData = { ...prevData.cardData };
-      updatedCardData[index] = { ...updatedCardData[index], [name]: value };
+      updatedCardData[cardId] = { ...updatedCardData[cardId], [name]: value };
       return {
         ...prevData,
         cardData: updatedCardData,
       };
     });
-    validateCardField(index, name, value);
+    validateCardField(cardId, name, value);
   };
   
   
@@ -593,11 +578,16 @@ const EditProfilePage = () => {
                 >
                   Cancel
                 </button>
-                {isProfileChanged() && isFormValid && (
+                {isProfileChanged() && (
                   <button
                     type="button"
-                    style={saveAndExitButtonStyle}
+                    style={{
+                      ...saveAndExitButtonStyle,
+                      opacity: isFormValid ? 1 : 0.5,
+                      cursor: isFormValid ? 'pointer' : 'not-allowed'
+                    }}
                     onClick={handleSaveAndExit}
+                    disabled={!isFormValid}
                   >
                     Save and Exit
                   </button>
@@ -726,17 +716,10 @@ const EditProfilePage = () => {
                             <select
                               style={inputStyle}
                               id={`cardType${index}`}
-<<<<<<< HEAD
-                              name={`cardData.${cardId}.cardType`}
-                              value={card.cardType ? card.cardType.toLowerCase() : ""} // Convert to lowercase for comparison
-                              onChange={handleInputChange}
-                            >
-=======
                               name="cardType"
                               value={card.cardType ? card.cardType.toLowerCase() : ""} // Convert to lowercase for comparison
-                              onChange={(e) => handleCardInputChange(index, e)}
+                              onChange={(e) => handleCardInputChange(cardId, e)}
                               >
->>>>>>> ec71296390545caa33b0ce9992398a45712fbc28
                               <option value="">Select Card Type</option>
                               <option value="visa">Visa</option>
                               <option value="mastercard">MasterCard</option>
@@ -752,9 +735,9 @@ const EditProfilePage = () => {
                               id={`cardNumber${index}`}
                               name="cardNumber"
                               value={card.cardNumber}
-                              onChange={(e) => handleCardInputChange(index, e)}
+                              onChange={(e) => handleCardInputChange(cardId, e)}
                               />
-                             {validationMessages[`card${index}_cardNumber`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_cardNumber`]}</p>}
+                             {validationMessages[`card${cardId}_cardNumber`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_cardNumber`]}</p>}
 
                             <label style={labelStyle} htmlFor={`expiryDate${index}`}>
                               Expiration Date
@@ -765,10 +748,10 @@ const EditProfilePage = () => {
                               id={`expiryDate${index}`}
                               name="expirationDate"
                               value={card.expirationDate}
-                              onChange={(e) => handleCardInputChange(index, e)}
+                              onChange={(e) => handleCardInputChange(cardId, e)}
                               placeholder="MM/YY"
                             />
-                            {validationMessages[`card${index}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_expirationDate`]}</p>}
+                            {validationMessages[`card${cardId}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_expirationDate`]}</p>}
 
                             <label style={labelStyle} htmlFor={`cvv${index}`}>
                               CVV
@@ -779,9 +762,9 @@ const EditProfilePage = () => {
                               id={`cvv${index}`}
                               name="cvv"
                               value={card.cvv}
-                              onChange={(e) => handleCardInputChange(index, e)}
+                              onChange={(e) => handleCardInputChange(cardId, e)}
                               />
-                              {validationMessages[`card${index}_cvv`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${index}_cvv`]}</p>}
+                              {validationMessages[`card${cardId}_cvv`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_cvv`]}</p>}
 
                             <label style={labelStyle} htmlFor={`billingAddress${index}`}>
                               Billing Address
@@ -792,7 +775,7 @@ const EditProfilePage = () => {
                               id={`billingAddress${index}`}
                               name={`cardData.${cardId}.billingAddress`}
                               value={card.billingAddress}
-                              onChange={(e) => handleCardInputChange(index, e)}
+                              onChange={(e) => handleCardInputChange(cardId, e)}
                               />
                           </div>
                         )
