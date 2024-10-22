@@ -211,10 +211,12 @@ const router = useRouter(); // Initialize the router
         promotionalEmails: formData.promotionalEmails,
         userType: "Customer",
         status: "active",
-        cardData: encryptedCardData // Store encrypted card data
+        cardData: encryptedCardData, // Store encrypted card data
+        emailVerification: "unverified", // Add emailVerification field 
       };
+      
 
-      // Store user data in Firestore
+      // Store user data in Firestore 
       await setDoc(doc(db, "users", user.uid), userData);
 
       console.log('User registered successfully!');

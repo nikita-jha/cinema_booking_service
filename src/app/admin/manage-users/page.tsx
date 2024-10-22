@@ -9,8 +9,10 @@ import { IUser } from "../../../models/user.model";
 import { deleteUser, getUsers } from "../../../lib/firebase/firestore"; 
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../../lib/firebase/config";
+import useRequireAuth from '../../../components/RequireAuth';
 
 const AdminPortalHomePage = () => {
+  useRequireAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<IUser[]>([]);
 

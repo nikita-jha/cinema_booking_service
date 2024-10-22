@@ -4,8 +4,10 @@ import { useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
 import Link from "next/link";
+import useRequireAuth from '../../components/RequireAuth';
 
 const BookingPage = () => {
+  useRequireAuth();
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
   const trailerPictureUrl = searchParams.get("trailerPictureUrl");
