@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { auth } from '../lib/firebase/config';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 
 const ChangePassword: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -56,11 +57,17 @@ const ChangePassword: React.FC = () => {
             setSuccess('Password updated successfully!');
             setTimeout(handleClose, 2000);
         } catch (error) {
-            if (error.code === 'auth/wrong-password') {
-                setError('Current password is incorrect.');
+            if (error instanceof FirebaseError) { // Type narrowing
+                if (error.code === 'auth/wrong-password') {
+                    setError('Current password is incorrect.');
+                } else {
+                    setError('Failed to change password. Please try again later.');
+                }
+                console.error('Error changing password:', error.code, error.message);
             } else {
-                setError('Failed to change password. Please try again later.');
-                console.error('Error changing password:', error);
+                // Handle any other unexpected error types
+                console.error('An unknown error occurred:', error);
+                setError('An unknown error occurred. Please try again.');
             }
         }
     };
