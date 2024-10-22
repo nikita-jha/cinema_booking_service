@@ -3,7 +3,7 @@
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { sendPasswordResetEmail, signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence, setPersistence, onAuthStateChanged, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { sendPasswordResetEmail, signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence, setPersistence, onAuthStateChanged, fetchSignInMethodsForEmail, sendEmailVerification } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -15,11 +15,11 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [emailSentMessage, setEmailSentMessage] = useState('');
+    const [verificationMessage, setVerificationMessage] = useState(''); // New state for email verification message
     const [rememberMe, setRememberMe] = useState(false);
-    const { setUser } = useUser();
+    const { setUser, user } = useUser(); // Access user context
 
     useEffect(() => {
-        // Check if user credentials are stored in localStorage
         const savedEmail = localStorage.getItem("rememberedEmail");
         const savedPassword = localStorage.getItem("rememberedPassword");
         const savedRememberMe = localStorage.getItem("rememberMe") === 'true';
@@ -35,16 +35,22 @@ const LoginPage = () => {
                 const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
+                    const emailVerified = firebaseUser.emailVerified;
                     setUser({
                         id: firebaseUser.uid,
                         name: userData.name || '',
                         email: firebaseUser.email || '',
                         userType: userData.userType,
+                        emailVerified: emailVerified, // Track if email is verified
                     });
-                    if (userData.userType === 'Customer') {
-                        router.push('/');
-                    } else {
-                        router.push('/adminHome');
+
+                    if (emailVerified) {
+                        // Redirect to appropriate page only if the email is verified
+                        if (userData.userType === 'Customer') {
+                            router.push('/');
+                        } else if (userData.userType === 'Admin') {
+                            router.push('/adminHome');
+                        }
                     }
                 }
             } else {
@@ -52,13 +58,13 @@ const LoginPage = () => {
             }
         });
 
-        // Cleanup subscription on unmount
         return () => unsubscribe();
     }, [setUser, router]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage('');
+        setEmailSentMessage('');
 
         try {
             await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
@@ -68,10 +74,15 @@ const LoginPage = () => {
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 const userType = userData.userType;
+                const emailVerified = userCredential.user.emailVerified;
 
+                if (!emailVerified) {
+                    setVerificationMessage("This email was never verified. Please create a new account with this email.");
+                    return;
+                }
+
+                // Set user and redirect based on type if verified
                 localStorage.setItem("user", JSON.stringify(userData));
-
-                // If "Remember Me" is checked, store email and password
                 if (rememberMe) {
                     localStorage.setItem("rememberedEmail", email);
                     localStorage.setItem("rememberedPassword", password);
@@ -87,6 +98,7 @@ const LoginPage = () => {
                     name: `${userData.firstName} ${userData.lastName}` || '',
                     email: userCredential.user.email || '',
                     userType: userType,
+                    emailVerified: emailVerified,
                 });
 
                 if (userType.toLowerCase() === 'customer') {
@@ -96,7 +108,6 @@ const LoginPage = () => {
                 }
 
             } else {
-                console.error("User document not found");
                 setErrorMessage("User data not found. Please contact support.");
             }
         } catch (error) {
@@ -111,27 +122,31 @@ const LoginPage = () => {
             return;
         }
 
-        const emailToCheck = email.trim();
-        console.log("Checking email:", emailToCheck); // Debugging log
-
-        const signInMethods = await fetchSignInMethodsForEmail(auth, emailToCheck);
-        console.log("Sign-in methods:", signInMethods); // Debugging log
-
-        if (signInMethods.length === 0) {
-            setErrorMessage("No user found with this email address.");
-            return;
-        }
-
         try {
+            const signInMethods = await fetchSignInMethodsForEmail(auth, email.trim());
+            if (signInMethods.length === 0) {
+                setErrorMessage("No user found with this email address.");
+                return;
+            }
+
             await sendPasswordResetEmail(auth, email);
-            //alert("Password reset email sent! Check your inbox.");
             setEmailSentMessage("Password reset email sent! Check your inbox.");
             setErrorMessage('');
-
         } catch (error) {
             console.error("Error sending password reset email:", error);
-            setErrorMessage("Error sending password reset email. Please try again.")
-            setEmailSentMessage('');
+            setErrorMessage("Error sending password reset email. Please try again.");
+        }
+    };
+
+    const handleResendVerification = async () => {
+        if (auth.currentUser && !auth.currentUser.emailVerified) {
+            try {
+                await sendEmailVerification(auth.currentUser);
+                setEmailSentMessage("Verification email resent! Please check your inbox.");
+            } catch (error) {
+                console.error("Error resending verification email:", error);
+                setErrorMessage("Failed to resend verification email. Please try again.");
+            }
         }
     };
 
