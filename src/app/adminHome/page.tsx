@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore"; // Firebase Firestore
 import Navbar from "../../components/Navbar";
 import Link from "next/link";
 import useRequireAuth from '../../components/RequireAuth';
+import AddRoom from "@/components/AddRoom";
 
 const AdminPortalHomePage = () => {
   useRequireAuth();
@@ -96,10 +97,11 @@ const AdminPortalHomePage = () => {
               Manage Promotions
             </button>
           </Link>
+
+          <AddRoom onRoomAdded={() => console.log("Room added")} />
         </div>
       </div>
-    </div>
-  );
+    </div>);
 };
 
 export default AdminPortalHomePage;
