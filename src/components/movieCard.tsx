@@ -52,8 +52,6 @@ const MovieCard = ({ movie }: MovieCardProps) => {
             pathname: '/viewdetails',
             query: {
               title: movie.title,
-              //trailerPictureUrl: movie.trailerPictureUrl,
-              //trailerVideoUrl: movie.trailerVideoUrl,  // Ensure consistent casing here
             },
           }}
         >
