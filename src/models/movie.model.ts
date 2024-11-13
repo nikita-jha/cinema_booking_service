@@ -4,6 +4,8 @@ export interface IMovie {
   director: string;
   mpaaRating: string;
   producer: string;
+  cast: string;
+  reviews: string;
   synopsis: string;
   title: string;
   schedule: ISchedule[];

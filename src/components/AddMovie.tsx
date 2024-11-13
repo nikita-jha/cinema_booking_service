@@ -18,6 +18,8 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
     mpaaRating: "",
     category: "",
     trailerVideoUrl: "",
+    cast: "",
+    reviews: "",
   });
 
   const handleInputChange = (e) => {
@@ -41,6 +43,8 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
         mpaaRating: "",
         category: "",
         trailerVideoUrl: "",
+        cast: "",
+        reviews: "",
       }); // Reset the form fields
     } catch (error) {
       console.error("Error adding movie:", error);
@@ -88,11 +92,28 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
+              <input
+                type="text"
+                name="cast"
+                value={movieData.cast}
+                onChange={handleInputChange}
+                placeholder="Cast *"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
               <textarea
                 name="synopsis"
                 value={movieData.synopsis}
                 onChange={handleInputChange}
                 placeholder="Synopsis *"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
+              <textarea
+                name="reviews"
+                value={movieData.reviews}
+                onChange={handleInputChange}
+                placeholder="Reviews *"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
