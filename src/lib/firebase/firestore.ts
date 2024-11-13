@@ -1,4 +1,4 @@
-import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc, deleteField } from 'firebase/firestore'; // Ensure setDoc is imported
+import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc, deleteField, query, where } from 'firebase/firestore'; // Ensure setDoc is imported
 import { db } from './config';
 import { auth } from './config'; // Add Firebase Auth import
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'; // Import auth functions
@@ -115,52 +115,6 @@ export const addBooking = async (roomId: string, movieName: string, date: string
   }
 };
 
-export const addMovieSchedule = async (movieId: string, schedule: any) => {
-  try {
-    // Get the movie document
-    const movieDocRef = doc(db, 'movies', movieId);
-    const movieDoc = await getDoc(movieDocRef);
-
-    if (!movieDoc.exists()) {
-      throw new Error('Movie does not exist');
-    }
-
-    const movieData = movieDoc.data();
-    
-    // Initialize schedules array if it doesn't exist
-    if (!movieData.schedules) {
-      movieData.schedules = [];
-    }
-
-    // Add the new schedule
-    movieData.schedules.push({
-      date: schedule.date,
-      time: schedule.time,
-      room: schedule.room,
-      createdAt: new Date().toISOString() // Optional: add creation timestamp
-    });
-
-    // Update the movie document with the new schedule
-    await updateDoc(movieDocRef, {
-      schedules: movieData.schedules
-    });
-    
-    // Create a booking for the room
-    await addBooking(
-      schedule.room,
-      movieData.title, // Use the movie title from the movie document
-      schedule.date,
-      schedule.time
-    );
-
-    console.log('Schedule and booking added successfully for movie:', movieId);
-    return true;
-
-  } catch (error) {
-    console.error('Error adding schedule:', error);
-    throw error;
-  }
-};
 
 export const getMovieSchedules = async (movieId: string): Promise<any[]> => {
   try {
@@ -266,44 +220,7 @@ export const updatePromotion = async (id: string, promotion: IPromotion) => {
   }
 };
 
-// export const getAvailableRooms = async (date: string, time: string): Promise<any[]> => {
-//   try {
-//     const roomsCollectionRef = collection(db, 'rooms');
-//     const roomsSnapshot = await getDocs(roomsCollectionRef);
-//     const availableRooms = roomsSnapshot.docs
-//       .map(doc => ({ id: doc.id, ...doc.data() }))
-//       .filter(room => room.bookedFrom <= date && room.bookedTo >= date);
 
-//     console.log('Available rooms fetched successfully for date:', date, 'and time:', time);
-//     return availableRooms;
-//   } catch (error) {
-//     console.error('Error fetching available rooms:', error);
-//     throw error;
-//   }
-// };
-
-export const getBookingsForRoom = async (roomId: string): Promise<any[]> => {
-  try {
-    const roomRef = doc(db, 'rooms', roomId);
-    const roomDoc = await getDoc(roomRef);
-    
-    if (!roomDoc.exists()) {
-      return [];
-    }
-
-    const bookings = roomDoc.data().bookings || {};
-    
-    // Convert the bookings map to an array of booking objects
-    return Object.entries(bookings).map(([key, value]: [string, any]) => ({
-      movie: value.movie,
-      date: value.time.toDate().toISOString().split('T')[0],
-      time: value.time.toDate().toTimeString().split(' ')[0]
-    }));
-  } catch (error) {
-    console.error('Error getting bookings:', error);
-    return [];
-  }
-};
 
 export const getRooms = async (): Promise<any[]> => {
   const roomsCollectionRef = collection(db, 'rooms');
@@ -314,49 +231,58 @@ export const getRooms = async (): Promise<any[]> => {
   }));
 };
 
-export const deleteMovieSchedule = async (movieId: string, scheduleToDelete: any) => {
+// Function to add a movie schedule with a conflict check
+export const addMovieScheduleWithConflictCheck = async (
+  movieId: string,
+  date: string,
+  startTime: string,
+  roomId: string
+) => {
   try {
-    // Get the movie document
-    const movieDocRef = doc(db, 'movies', movieId);
-    const movieDoc = await getDoc(movieDocRef);
+    // Reference the top-level "Shows" collection to check for conflicts
+    const showsRef = collection(db, 'Shows');
+    const roomDateQuery = query(showsRef, where("date", "==", date), where("roomId", "==", roomId));
+    const scheduleSnapshot = await getDocs(roomDateQuery);
 
-    if (!movieDoc.exists()) {
-      throw new Error('Movie does not exist');
+    const newScheduleStart = new Date(`${date}T${startTime}`);
+    const newScheduleEnd = new Date(newScheduleStart.getTime() + 3 * 60 * 60 * 1000);
+
+    console.log("Checking for conflicts in top-level 'Shows' collection...");
+    let conflictExists = false;
+
+    scheduleSnapshot.forEach(doc => {
+      const schedule = doc.data();
+      console.log("Existing schedule:", schedule);
+
+      const existingStart = new Date(`${schedule.date}T${schedule.time}`);
+      const existingEnd = new Date(existingStart.getTime() + 3 * 60 * 60 * 1000);
+
+      if (
+        (newScheduleStart >= existingStart && newScheduleStart < existingEnd) ||
+        (newScheduleEnd > existingStart && newScheduleEnd <= existingEnd) ||
+        (newScheduleStart <= existingStart && newScheduleEnd >= existingEnd)
+      ) {
+        conflictExists = true;
+        console.log("Conflict detected with schedule:", schedule);
+      }
+    });
+
+    if (conflictExists) {
+      throw new Error('Scheduling conflict detected. Please choose a different time.');
     }
 
-    const movieData = movieDoc.data();
-    
-    console.log("Current schedules:", movieData.schedules); // Debug log
-    console.log("Schedule to delete:", scheduleToDelete); // Debug log
-
-    // Filter out the schedule to delete
-    const updatedSchedules = movieData.schedules.filter((schedule: any) => 
-      !(schedule.date === scheduleToDelete.date && 
-        schedule.time === scheduleToDelete.time && 
-        schedule.room === scheduleToDelete.room)
-    );
-
-    console.log("Updated schedules:", updatedSchedules); // Debug log
-
-    // Update the movie document with the filtered schedules
-    await updateDoc(movieDocRef, {
-      schedules: updatedSchedules
+    // If no conflicts, add the new schedule in the top-level "Shows" collection
+    const newShowRef = doc(db, 'Shows', `${movieId}-${date}-${startTime}`);
+    await setDoc(newShowRef, {
+      movieId,
+      date,
+      time: startTime,
+      roomId
     });
 
-    // Delete the booking from the room
-    const roomRef = doc(db, 'rooms', scheduleToDelete.room);
-    const bookingKey = `${movieData.title}_${scheduleToDelete.date}_${scheduleToDelete.time}`;
-    
-    console.log("Deleting booking with key:", bookingKey); // Debug log
-
-    await updateDoc(roomRef, {
-      [`bookings.${bookingKey}`]: deleteField()
-    });
-
-    console.log('Schedule deleted successfully');
-    return true;
+    console.log('Schedule added successfully!');
   } catch (error) {
-    console.error('Error deleting schedule:', error);
+    console.error('Error adding schedule:', error);
     throw error;
   }
 };
