@@ -1,215 +1,166 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
-import Link from "next/link";
-import useRequireAuth from '../../components/RequireAuth';
+import { FaStar, FaClock, FaFilm, FaUser, FaPlayCircle, FaUsers } from "react-icons/fa";
+import { IoCalendarOutline } from "react-icons/io5";
+import { db } from "../../lib/firebase/config";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
-const BookingPage = () => {
-  useRequireAuth();
+const MovieDetailsPage = () => {
+  const [movieData, setMovieData] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
-  const trailerPictureUrl = searchParams.get("trailerPictureUrl");
-  const trailerVideoUrl = searchParams.get("trailerVideoUrl"); // Add trailer video URL
 
-  // Convert YouTube video URL to embedded URL, null check
+  useEffect(() => {
+    const fetchMovieData = async () => {
+      if (title) {
+        try {
+          // Query the 'movies' collection where 'title' matches the title from searchParams
+          const moviesRef = collection(db, "movies");
+          const q = query(moviesRef, where("title", "==", title));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            // Assuming the first document is the movie you're looking for
+            const movieDoc = querySnapshot.docs[0];
+            setMovieData(movieDoc.data());
+          } else {
+            setError("Movie not found");
+          }
+        } catch (err) {
+          setError("Error fetching movie data");
+          console.error(err);
+        }
+      } else {
+        setError("Movie title is required");
+      }
+    };
+
+    fetchMovieData();
+  }, [title]);
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  if (!movieData) {
+    return <div>Loading...</div>;
+  }
+
+  // Destructure movieData fields
+  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl, runtime, releaseDate, reviews = [], showDates = [] } = movieData;
+
   let embedUrl = "";
   if (trailerVideoUrl) {
     embedUrl = trailerVideoUrl.replace("watch?v=", "embed/");
   }
-  console.log("Trailer:", embedUrl)
-
-  const [showTime, setShowTime] = useState("");
-  const [showDate, setShowDate] = useState("");
-  const [numTickets, setNumTickets] = useState(0);
-  const [ages, setAges] = useState<string[]>([]);
-  const [error, setError] = useState("");
-
-  const handleNumTicketsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    setNumTickets(value);
-    setAges(Array(value).fill(""));
-  };
-
-  const handleAgeChange = (index: number, value: string) => {
-    const newAges = [...ages];
-    newAges[index] = value;
-    setAges(newAges);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission logic here
-  };
-
-  const validateForm = () => {
-    if (!showDate) {
-      setError("Please select a show date.");
-      return false;
-    }
-
-    const selectedDate = new Date(showDate);
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Set to start of the day
-
-    if (selectedDate < currentDate) {
-      setError("The selected date has already passed.");
-      return false;
-    }
-
-    if (!showTime) {
-      setError("Please select a show time.");
-      return false;
-    }
-
-    if (numTickets <= 0) {
-      setError("Please select at least one ticket.");
-      return false;
-    }
-
-    if (ages.some((age) => age === "")) {
-      setError("Please specify the ages for all tickets.");
-      return false;
-    }
-
-    setError("");
-    return true;
-  };
 
   return (
     <div>
       <Navbar />
-      <div className="container mx-auto p-4 flex flex-col items-center">
-        <h1 className="text-2xl font-bold mb-4 text-center">
-          Buy Tickets for {title}
-        </h1>
-        <div className="flex justify-center items-center mb-4 w-full max-w-2xl">
-          {trailerPictureUrl && (
-            <img
-              src={trailerPictureUrl}
-              alt={`${title} Trailer`}
-              className="w-1/2 max-h-96 object-contain"
-            />
-          )}
-          {/* Embedded YouTube video */}
-          {embedUrl && (
-            <div className="w-1/2 ml-4">
-              <iframe
-                width="150%"
-                height="384"
-                src={embedUrl}
-                title={`${title} Trailer`}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-          )}
-        </div>
-        <div className="mb-4 w-full max-w-md">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="showDate"
-          >
-            Select Show Date
-          </label>
-          <input
-            type="date"
-            id="showDate"
-            value={showDate}
-            onChange={(e) => setShowDate(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      <div className="container mx-auto p-4">
+        {/* Movie Header */}
+        <h1 className="text-3xl font-bold mb-6">{title}</h1>
+        
+        {/* Movie Details Section */}
+        <div className="flex flex-col md:flex-row gap-6 mb-10">
+          <img
+            src={trailerPictureUrl}
+            alt={`${title} Poster`}
+            className="w-full md:w-1/4 rounded-lg shadow-lg"
           />
+          
+          <div className="w-full md:w-3/4">
+            <h2 className="text-2xl font-bold">{title}</h2>
+            <br />
+            <p className="text-gray-700 italic mb-4">{synopsis}</p>
+            <div className="flex items-center mb-2">
+            <FaFilm className="text-gray-600 mr-2" /> 
+                <strong className="mr-2">Director:</strong> {director}
+            </div>
+            <div className="flex items-center mb-2">
+            <FaUser className="text-gray-600 mr-2" /> 
+                <strong className="mr-2">Producer:</strong> {producer}
+            </div>
+            <div className="flex items-center mb-2">
+            <FaUsers className="text-gray-600 mr-2" /> 
+                <strong className="mr-2">Cast:</strong> {cast}
+            </div>
+            <div className="flex items-center mb-2">
+              <FaStar className="text-yellow-500 mr-2" /> 
+                <strong className="mr-2">Rating: </strong> {mpaaRating}
+            </div>
+            <div className="flex items-center mb-2">
+              <FaPlayCircle className="text-gray-600 mr-2" /> 
+                <strong className="mr-2">Category: </strong> {category}
+            </div>
+            <div className="flex items-center mb-2">
+              <IoCalendarOutline className="text-gray-600 mr-2" /> 
+                <strong className="mr-2">Released On:</strong> {releaseDate}
+            </div>
+            <a
+              href={trailerVideoUrl}
+              className="text-blue-500 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Trailer: Watch on YouTube
+            </a>
+          </div>
+
+          {embedUrl && (
+            <iframe
+              className="w-full md:w-1/2 h-64 mt-6 md:mt-0 rounded-lg shadow-lg"
+              src={embedUrl}
+              title={`${title} Trailer`}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          )}
         </div>
-        <div className="mb-4 w-full max-w-md text-center">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Select Show Time
-          </label>
-          {showTime && <p className="text-lg font-semibold mb-2">{showTime}</p>}
-          <div className="flex justify-center space-x-4">
-            {["10AM", "2PM", "5PM"].map((time) => (
+
+        {/* Showtime Section */}
+        <div className="mb-10 border-t pt-4">
+          <h2 className="text-xl font-semibold mb-3">View Showtimes</h2>
+          <div className="flex items-center mb-4">
+            <input type="date" className="p-2 border rounded w-48" placeholder="mm/dd/yyyy" />
+            <button className="bg-blue-600 text-white px-4 py-2 rounded ml-3 flex items-center">
+              <IoCalendarOutline className="mr-2" /> Update Showtimes
+            </button>
+          </div>
+          
+          <h3 className="text-lg font-medium mb-2">Showtimes on [Selected Date]:</h3>
+          <div className="flex space-x-4">
+            {showDates.map((dateInfo, index) => (
               <button
-                key={time}
-                type="button"
-                onClick={() => setShowTime(time)}
-                className={`w-12 h-12 rounded-full border-2 ${
-                  showTime === time
-                    ? "bg-blue-500 text-white"
-                    : "bg-white text-blue-500"
-                } border-blue-500 hover:bg-blue-500 hover:text-white font-bold`}
+                key={index}
+                className="px-4 py-2 rounded bg-blue-500 text-white"
               >
-                {time}
+                {dateInfo.time}
               </button>
             ))}
           </div>
+          <p className="text-gray-500 text-sm mt-2">Select a showtime above to book your tickets</p>
         </div>
-        <form onSubmit={handleSubmit} className="w-full max-w-md">
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="numTickets"
-            >
-              Number of Tickets
-            </label>
-            <input
-              type="number"
-              id="numTickets"
-              value={numTickets}
-              onChange={handleNumTicketsChange}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              min="0"
-            />
-          </div>
-          {numTickets > 0 && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Enter Ages
-              </label>
-              {ages.map((age, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  placeholder={`Age for Ticket ${index + 1}`}
-                  value={age}
-                  onChange={(e) => handleAgeChange(index, e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2"
-                />
-              ))}
+
+        {/* Reviews Section */}
+        <div className="mb-8 border-t pt-4">
+        <h2 className="text-xl font-semibold mb-3">Reviews</h2>
+        {reviews ? (
+            <div className="border p-4 rounded-lg mb-4 shadow-md">
+            <p className="text-gray-700">{reviews}</p>
             </div>
-          )}
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-          <div className="flex justify-center">
-            <Link
-              href={{
-                pathname: "/summary",
-                query: {
-                  numTickets,
-                  ages: JSON.stringify(ages),
-                  showTime,
-                  showDate,
-                  trailerPictureUrl,
-                  trailerVideoUrl,
-                  title,
-                },
-              }}
-            >
-              <button
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                onClick={(e) => {
-                  if (!validateForm()) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                Proceed to Confirmation
-              </button>
-            </Link>
-          </div>
-        </form>
+        ) : (
+            <p>No reviews available for this movie.</p>
+        )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default BookingPage;
+export default MovieDetailsPage;
