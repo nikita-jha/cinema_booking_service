@@ -62,6 +62,14 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [advancedSearch, setAdvancedSearch] = useState({
+    title: '',
+    category: '',
+    showDate: '',
+    showDateRange: false,
+    endDate: '',
+  });
 
   const fetchMovies = async () => {
     setIsLoading(true);
@@ -90,13 +98,55 @@ const HomePage = () => {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
-
+  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   const filteredCurrentlyScreeningMovies = currentlyScreeningMovies.filter(
-    (movie) => movie.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    (movie) => {
+      const matchesTitle = isAdvancedSearch
+        ? movie.title.toLowerCase().includes(advancedSearch.title.toLowerCase())
+        : movie.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = advancedSearch.category
+        ? movie.genre?.toLowerCase().includes(advancedSearch.category.toLowerCase())
+        : true;
+      const matchesShowDate = advancedSearch.showDate
+        ? new Date(movie.showDate).toDateString() === new Date(advancedSearch.showDate).toDateString()
+        : true;
+      const matchesDateRange = advancedSearch.showDateRange && advancedSearch.endDate
+        ? new Date(movie.showDate) >= new Date(advancedSearch.showDate) && new Date(movie.showDate) <= new Date(advancedSearch.endDate)
+        : true;
+      return matchesTitle && matchesCategory && (advancedSearch.showDateRange ? matchesDateRange : matchesShowDate);
+    }
   );
-  const filteredComingSoonMovies = comingSoonMovies.filter((movie) =>
-    movie.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  
+  const filteredComingSoonMovies = comingSoonMovies.filter(
+    (movie) => {
+      const matchesTitle = isAdvancedSearch
+        ? movie.title.toLowerCase().includes(advancedSearch.title.toLowerCase())
+        : movie.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = advancedSearch.category
+        ? movie.genre?.toLowerCase().includes(advancedSearch.category.toLowerCase())
+        : true;
+      const matchesShowDate = advancedSearch.showDate
+        ? new Date(movie.showDate).toDateString() === new Date(advancedSearch.showDate).toDateString()
+        : true;
+      const matchesDateRange = advancedSearch.showDateRange && advancedSearch.endDate
+        ? new Date(movie.showDate) >= new Date(advancedSearch.showDate) && new Date(movie.showDate) <= new Date(advancedSearch.endDate)
+        : true;
+      return matchesTitle && matchesCategory && (advancedSearch.showDateRange ? matchesDateRange : matchesShowDate);
+    }
   );
+
+  const handleAdvancedSearchChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setAdvancedSearch((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleAdvancedSearch = () => {
+    // Implement the advanced search logic here
+    setIsAdvancedSearchOpen(false);
+  };
 
   if (isLoading) {
     return (
@@ -114,29 +164,104 @@ const HomePage = () => {
           <h1 className="text-4xl font-bold text-center mb-12 text-gray-800">
             Cinema E-Booking
           </h1>
-          {/* Edit Profile button removed */}
+          <button
+            onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
+            className="absolute top-0 right-0 mt-4 mr-4 px-4 py-2 bg-blue-500 text-white rounded-full"
+          >
+            {isAdvancedSearch ? 'Basic Search' : 'Advanced Search'}
+          </button>
         </div>
-        <div className="relative mb-12">
-          <input
-            type="text"
-            placeholder="Search movies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={20}
-          />
-        </div>
-
-        <MovieCarousel
-          title="Now Screening"
-          movies={filteredCurrentlyScreeningMovies}
-        />
-        <MovieCarousel 
-        title="Coming Soon" 
-        movies={filteredComingSoonMovies} />
+  
+        {isAdvancedSearch ? (
+          <>
+            <div className="relative mb-12">
+              <input
+                type="text"
+                placeholder="Search by title..."
+                name="title"
+                value={advancedSearch.title}
+                onChange={handleAdvancedSearchChange}
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="relative mb-12">
+              <input
+                type="text"
+                placeholder="Search by category..."
+                name="category"
+                value={advancedSearch.category}
+                onChange={handleAdvancedSearchChange}
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="relative mb-12">
+              <input
+                type="date"
+                placeholder="Search by show date..."
+                name="showDate"
+                value={advancedSearch.showDate}
+                onChange={handleAdvancedSearchChange}
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="relative mb-12">
+              <label className="block mb-2">
+                <input
+                  type="checkbox"
+                  name="showDateRange"
+                  checked={advancedSearch.showDateRange}
+                  onChange={handleAdvancedSearchChange}
+                  className="mr-2"
+                />
+                Show Date Range
+              </label>
+              {advancedSearch.showDateRange && (
+                <input
+                  type="date"
+                  name="endDate"
+                  value={advancedSearch.endDate}
+                  onChange={handleAdvancedSearchChange}
+                  className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="relative mb-12">
+            <input
+              type="text"
+              placeholder="Search movies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+          </div>
+        )}
+  
+        {filteredCurrentlyScreeningMovies.length === 0 && filteredComingSoonMovies.length === 0 ? (
+          <div className="text-center text-gray-800 text-xl mt-12">
+            No results found
+          </div>
+        ) : (
+          <>
+            {filteredCurrentlyScreeningMovies.length > 0 && (
+              <MovieCarousel
+                title="Now Screening"
+                movies={filteredCurrentlyScreeningMovies}
+              />
+            )}
+            {filteredComingSoonMovies.length > 0 && (
+              <MovieCarousel 
+                title="Coming Soon" 
+                movies={filteredComingSoonMovies} 
+              />
+            )}
+          </>
+        )}
       </div>
     </div>
   );
