@@ -1,4 +1,4 @@
-import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore'; // Ensure setDoc is imported
+import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc, deleteField, query, where } from 'firebase/firestore'; // Ensure setDoc is imported
 import { db } from './config';
 import { auth } from './config'; // Add Firebase Auth import
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'; // Import auth functions
@@ -92,30 +92,29 @@ export const updateMovie = async (id: string, movie: IMovie) => {
   }
 };
 
-export const addMovieSchedule = async (movieId: string, schedule: any) => {
+export const addBooking = async (roomId: string, movieName: string, date: string, time: string) => {
   try {
-    const movieDocRef = doc(db, 'movies', movieId);
-    const movieDoc = await getDoc(movieDocRef);
+    const roomRef = doc(db, 'rooms', roomId);
+    
+    // Create a unique key for the booking using movie name and time
+    const bookingKey = `${movieName}_${date}_${time}`;
+    
+    // Update the bookings map in the room document
+    await updateDoc(roomRef, {
+      [`bookings.${bookingKey}`]: {
+        movie: movieName,
+        time: new Date(`${date}T${time}`)
+      }
+    });
 
-    if (!movieDoc.exists()) {
-      console.error('Movie does not exist');  
-      return;
-    }
-
-    const movieData = movieDoc.data();
-    if (!movieData.schedules) {
-      movieData.schedules = [];
-    }
-
-    movieData.schedules.push(schedule);
-
-    await updateDoc(movieDocRef, movieData);
-    console.log('Schedule added to movie with ID:', movieId);
+    console.log('Booking added for room:', roomId);
+    return true;
   } catch (error) {
-    console.error('Error adding schedule:', error);
+    console.error('Error adding booking:', error);
     throw error;
   }
 };
+
 
 export const getMovieSchedules = async (movieId: string): Promise<any[]> => {
   try {
@@ -221,3 +220,69 @@ export const updatePromotion = async (id: string, promotion: IPromotion) => {
   }
 };
 
+
+
+export const getRooms = async (): Promise<any[]> => {
+  const roomsCollectionRef = collection(db, 'rooms');
+  const roomsSnapshot = await getDocs(roomsCollectionRef);
+  return roomsSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+};
+
+// Function to add a movie schedule with a conflict check
+export const addMovieScheduleWithConflictCheck = async (
+  movieId: string,
+  date: string,
+  startTime: string,
+  roomId: string
+) => {
+  try {
+    // Reference the top-level "Shows" collection to check for conflicts
+    const showsRef = collection(db, 'Shows');
+    const roomDateQuery = query(showsRef, where("date", "==", date), where("roomId", "==", roomId));
+    const scheduleSnapshot = await getDocs(roomDateQuery);
+
+    const newScheduleStart = new Date(`${date}T${startTime}`);
+    const newScheduleEnd = new Date(newScheduleStart.getTime() + 3 * 60 * 60 * 1000);
+
+    console.log("Checking for conflicts in top-level 'Shows' collection...");
+    let conflictExists = false;
+
+    scheduleSnapshot.forEach(doc => {
+      const schedule = doc.data();
+      console.log("Existing schedule:", schedule);
+
+      const existingStart = new Date(`${schedule.date}T${schedule.time}`);
+      const existingEnd = new Date(existingStart.getTime() + 3 * 60 * 60 * 1000);
+
+      if (
+        (newScheduleStart >= existingStart && newScheduleStart < existingEnd) ||
+        (newScheduleEnd > existingStart && newScheduleEnd <= existingEnd) ||
+        (newScheduleStart <= existingStart && newScheduleEnd >= existingEnd)
+      ) {
+        conflictExists = true;
+        console.log("Conflict detected with schedule:", schedule);
+      }
+    });
+
+    if (conflictExists) {
+      throw new Error('Scheduling conflict detected. Please choose a different time.');
+    }
+
+    // If no conflicts, add the new schedule in the top-level "Shows" collection
+    const newShowRef = doc(db, 'Shows', `${movieId}-${date}-${startTime}`);
+    await setDoc(newShowRef, {
+      movieId,
+      date,
+      time: startTime,
+      roomId
+    });
+
+    console.log('Schedule added successfully!');
+  } catch (error) {
+    console.error('Error adding schedule:', error);
+    throw error;
+  }
+};
