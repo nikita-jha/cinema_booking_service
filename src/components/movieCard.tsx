@@ -4,16 +4,13 @@ import Link from 'next/link';
 type MovieCardProps = {
   movie: {
     title: string;
+    mpaaRating: string;
     producer: string;
     director: string;
     synopsis: string;
     trailerPictureUrl?: string;
     trailerVideoUrl?: string;  // Ensure consistent casing here
-    reviews?: {
-      user: string;
-      rating: number;
-      comment: string;
-    };
+    reviews?: string;
   };
 };
 
@@ -33,19 +30,10 @@ const MovieCard = ({ movie }: MovieCardProps) => {
       <div className="p-4 flex-grow flex flex-col overflow-hidden">
         <h1 className="text-lg font-bold mb-2 text-gray-800">{movie.title}</h1>
         <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          <p className="text-gray-600 mb-1 text-xs">Producer: {movie.producer}</p>
+        <p className="text-gray-600 mb-1 text-xs">MPAA Rating: {movie.mpaaRating}</p>
+          <p className="text-gray-600 mb-1 text-xs">Producer(s): {movie.producer}</p>
           <p className="text-gray-700 mb-1 text-xs">Directed by: {movie.director}</p>
-          {movie.reviews && (
-            <div className="mb-2">
-              <div className="flex items-center mb-1">
-                <Star className="text-yellow-400 mr-1" size={12} fill="currentColor" />
-                <span className="text-gray-700 font-semibold text-xs">{movie.reviews.rating}/10</span>
-                <span className="text-gray-500 ml-1 text-xs">({movie.reviews.user})</span>
-              </div>
-              <p className="text-gray-700 italic text-xs mb-2">"{movie.reviews.comment}"</p>
-            </div>
-          )}
-          <p className="text-gray-700 text-xs">{movie.synopsis}</p>
+          <p className="text-gray-700 text-xs">Synopsis: {movie.synopsis}</p>
         </div>
         <Link
           href={{

@@ -90,6 +90,15 @@ const EditMovie: React.FC<EditMovieProps> = ({ movie, onMovieUpdated }) => {
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
+              <input
+                type="text"
+                name="genre"
+                value={movieData.genre}
+                onChange={handleInputChange}
+                placeholder="Genre"
+                className="mb-2 w-full p-2 border rounded text-gray-800"
+                required
+              />
               <textarea
                 name="synopsis"
                 value={movieData.synopsis}
