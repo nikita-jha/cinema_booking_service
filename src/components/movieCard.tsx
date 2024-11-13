@@ -49,7 +49,7 @@ const MovieCard = ({ movie }: MovieCardProps) => {
         </div>
         <Link
           href={{
-            pathname: '/booking',
+            pathname: '/viewdetails',
             query: {
               title: movie.title,
               trailerPictureUrl: movie.trailerPictureUrl,
@@ -58,7 +58,7 @@ const MovieCard = ({ movie }: MovieCardProps) => {
           }}
         >
           <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm mt-4">
-            Book Now
+            View Details
           </button>
         </Link>
       </div>
