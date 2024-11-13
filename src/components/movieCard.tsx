@@ -5,6 +5,7 @@ type MovieCardProps = {
   movie: {
     title: string;
     mpaaRating: string;
+    genre: string;
     producer: string;
     director: string;
     synopsis: string;
@@ -31,8 +32,7 @@ const MovieCard = ({ movie }: MovieCardProps) => {
         <h1 className="text-lg font-bold mb-2 text-gray-800">{movie.title}</h1>
         <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         <p className="text-gray-600 mb-1 text-xs">MPAA Rating: {movie.mpaaRating}</p>
-          <p className="text-gray-600 mb-1 text-xs">Producer(s): {movie.producer}</p>
-          <p className="text-gray-700 mb-1 text-xs">Directed by: {movie.director}</p>
+          <p className="text-gray-600 mb-1 text-xs">Genre(s): {movie.genre}</p>
           <p className="text-gray-700 text-xs">Synopsis: {movie.synopsis}</p>
         </div>
         <Link
