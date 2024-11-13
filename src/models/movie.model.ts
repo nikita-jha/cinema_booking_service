@@ -6,6 +6,7 @@ export interface IMovie {
   producer: string;
   cast: string;
   reviews: string;
+  genre: string;
   synopsis: string;
   title: string;
   schedule: ISchedule[];

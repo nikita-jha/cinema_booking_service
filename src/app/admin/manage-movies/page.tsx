@@ -71,12 +71,6 @@ const AdminPortalHomePage = () => {
                   Producer
                 </th>
                 <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Cast
-                </th>
-                <th className="py-2 px-4 text-left border-b text-gray-700">
-                  Reviews
-                </th>
-                <th className="py-2 px-4 text-left border-b text-gray-700">
                   Actions
                 </th>
               </tr>
