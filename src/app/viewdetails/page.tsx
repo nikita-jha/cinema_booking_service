@@ -7,6 +7,8 @@ import { db } from "../../lib/firebase/config";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { FaStar, FaClock, FaFilm, FaUser, FaPlayCircle, FaUsers } from "react-icons/fa";
 import { IoCalendarOutline } from "react-icons/io5";
+import Link from 'next/link';
+
 
 // Helper function to format time to 12-hour format with AM/PM
 const formatTime = (time24) => {
@@ -189,13 +191,21 @@ const MovieDetailsPage = () => {
             <p className="text-gray-500">No showtimes available for this date.</p>
           )}
         </div>
-
-        <button
-          onClick={handleProceedToBooking}
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
+        <Link
+          href={{
+            pathname: '/booking',
+            query: {
+              title: title,
+            },
+          }}
         >
-          Proceed to Booking
-        </button>
+            <button
+            onClick={handleProceedToBooking}
+            className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
+            >
+            Proceed to Booking
+            </button>
+        </Link>
       </div>
       </div>
     </div>
