@@ -6,31 +6,12 @@ import { IMovie } from '@/models/movie.model';
 import { IUser } from '@/models/user.model';
 import { IPromotion } from '@/models/promotion.model';
 interface IShow {
+  id: string;
   date: string;
   movieId: string;
   roomId: string;
   time: string;
 }
-export const getMovieById = async (movieId: string): Promise<IMovie | null> => {
-  try {
-    const movieDocRef = doc(db, 'movies', movieId); // Reference to the movie document
-    const movieDoc = await getDoc(movieDocRef); // Fetch the document
-
-    if (movieDoc.exists()) {
-      const movieData = movieDoc.data() as IMovie; // Typecast the document data to IMovie
-      return {
-        id: movieDoc.id,
-        ...movieData,
-      };
-    } else {
-      console.warn(`Movie with ID ${movieId} not found.`);
-      return null;
-    }
-  } catch (error) {
-    console.error('Error fetching movie:', error);
-    throw error;
-  }
-};
 
 // Function to create a new user in Firebase Authentication and Firestore
 export const registerUser = async (userData: IUser) => {
@@ -45,7 +26,7 @@ export const registerUser = async (userData: IUser) => {
     await setDoc(doc(db, 'users', user.uid), {
       email,
       firstName,
-      lastName, 
+      lastName,
       phone,
       address: {
         street,
@@ -352,6 +333,27 @@ export const addMovieScheduleWithConflictCheck = async (
     console.log('Schedule added successfully!');
   } catch (error) {
     console.error('Error adding schedule:', error);
+    throw error;
+  }
+};
+
+export const getMovieById = async (movieId: string): Promise<IMovie | null> => {
+  try {
+    const movieDocRef = doc(db, 'movies', movieId);
+    const movieDoc = await getDoc(movieDocRef);
+
+    if (movieDoc.exists()) {
+      const movieData = movieDoc.data() as IMovie;
+      return {
+        id: movieDoc.id,
+        ...movieData,
+      };
+    } else {
+      console.warn(`Movie with ID ${movieId} not found.`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching movie:', error);
     throw error;
   }
 };

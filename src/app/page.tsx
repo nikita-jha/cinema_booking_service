@@ -72,15 +72,17 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   const [advancedSearch, setAdvancedSearch] = useState({
     title: '',
     category: '',
-    showDate: '',
+    showDate: null,
     showDateRange: false,
-    endDate: '',
+    endDate: null,
   });
   const [shows, setShows] = useState<IShow[]>([]);
+  const [filteredCurrentlyScreeningMovies, setFilteredCurrentlyScreeningMovies] = useState([]);
+  const [filteredComingSoonMovies, setFilteredComingSoonMovies] = useState([]);
 
   const fetchMoviesAndShows = async () => {
     setIsLoading(true);
@@ -112,84 +114,83 @@ const HomePage = () => {
     return () => unsubscribe();
   }, []);
 
-  const matchesShowDate = async () => {
-    let filteredMovies = [];
-  
-    try {
-      // Filter shows based on the selected date or date range
-      const filteredShows = shows.filter(show => {
-        if (advancedSearch.showDateRange && advancedSearch.endDate) {
-          const showDate = new Date(show.date);
-          const startDate = new Date(advancedSearch.showDate);
-          const endDate = new Date(advancedSearch.endDate);
-          return showDate >= startDate && showDate <= endDate;
-        } else if (advancedSearch.showDate) {
-          return new Date(show.date).toDateString() === new Date(advancedSearch.showDate).toDateString();
-        }
-        return true;
-      });
-  
-      // For each filtered show, fetch the corresponding movie
-      for (const show of filteredShows) {
-        const movie = await getMovieById(show.movieId);
-        if (movie) {
-          filteredMovies.push(movie);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching shows or movies:', error);
-    }
-  
-    return filteredMovies;
-  };
-
-  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
-  const [filteredMovies, setFilteredMovies] = useState([]);
-
   useEffect(() => {
-    if (isAdvancedSearch && (advancedSearch.showDate || advancedSearch.showDateRange)) {
-      matchesShowDate().then(setFilteredMovies);
-    } else {
-      setFilteredMovies(currentlyScreeningMovies);
-    }
-  }, [isAdvancedSearch, advancedSearch, currentlyScreeningMovies, shows]);
+    const filterMovies = async () => {
+      if (isAdvancedSearch && (advancedSearch.showDate || advancedSearch.showDateRange)) {
+        // Advanced search with date or date range
+        const selectedStartDate = advancedSearch.showDate
+          ? new Date(advancedSearch.showDate).toISOString().split('T')[0]
+          : null;
+        const selectedEndDate =
+          advancedSearch.showDateRange && advancedSearch.endDate
+            ? new Date(advancedSearch.endDate).toISOString().split('T')[0]
+            : null;
 
-  const filteredCurrentlyScreeningMovies = filteredMovies.filter(
-    (movie) => {
-      const matchesTitle = isAdvancedSearch
-        ? movie.title.toLowerCase().includes(advancedSearch.title.toLowerCase())
-        : movie.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = advancedSearch.category
-        ? movie.genre?.toLowerCase().includes(advancedSearch.category.toLowerCase())
-        : true;
-      const matchesShowDate = advancedSearch.showDate
-        ? new Date(movie.showDate).toDateString() === new Date(advancedSearch.showDate).toDateString()
-        : true;
-      const matchesDateRange = advancedSearch.showDateRange && advancedSearch.endDate
-        ? new Date(movie.showDate) >= new Date(advancedSearch.showDate) && new Date(movie.showDate) <= new Date(advancedSearch.endDate)
-        : true;
-      return matchesTitle && matchesCategory && (advancedSearch.showDateRange ? matchesDateRange : matchesShowDate);
-    }
-  );
-  
-  
-  const filteredComingSoonMovies = comingSoonMovies.filter(
-    (movie) => {
-      const matchesTitle = isAdvancedSearch
-        ? movie.title.toLowerCase().includes(advancedSearch.title.toLowerCase())
-        : movie.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = advancedSearch.category
-        ? movie.genre?.toLowerCase().includes(advancedSearch.category.toLowerCase())
-        : true;
-      const matchesShowDate = advancedSearch.showDate
-        ? new Date(movie.showDate).toDateString() === new Date(advancedSearch.showDate).toDateString()
-        : true;
-      const matchesDateRange = advancedSearch.showDateRange && advancedSearch.endDate
-        ? new Date(movie.showDate) >= new Date(advancedSearch.showDate) && new Date(movie.showDate) <= new Date(advancedSearch.endDate)
-        : true;
-      return matchesTitle && matchesCategory && (advancedSearch.showDateRange ? matchesDateRange : matchesShowDate);
-    }
-  );
+        // Filter shows based on date
+        const filteredShows = shows.filter((show) => {
+          const showDateStr = show.date; // 'YYYY-MM-DD'
+
+          if (selectedStartDate && selectedEndDate) {
+            return showDateStr >= selectedStartDate && showDateStr <= selectedEndDate;
+          } else if (selectedStartDate) {
+            return showDateStr === selectedStartDate;
+          }
+          return true;
+        });
+
+        // Get unique movie IDs from filtered shows
+        const movieIds = Array.from(new Set(filteredShows.map((show) => show.movieId)));
+
+        // Fetch movies corresponding to filtered shows
+        const movies = [];
+        for (const movieId of movieIds) {
+          const movie = await getMovieById(movieId);
+          if (movie) {
+            movies.push(movie);
+          }
+        }
+
+        // Now apply title and category filters
+        const filteredMovies = movies.filter((movie) => {
+          const matchesTitle = advancedSearch.title
+            ? movie.title.toLowerCase().includes(advancedSearch.title.toLowerCase())
+            : true;
+          const matchesCategory = advancedSearch.category
+            ? movie.genre?.toLowerCase().includes(advancedSearch.category.toLowerCase())
+            : true;
+          return matchesTitle && matchesCategory;
+        });
+
+        // Separate movies into currently screening and coming soon
+        setFilteredCurrentlyScreeningMovies(
+          filteredMovies.filter((movie) => movie.category === "Currently Screening"),
+        );
+        setFilteredComingSoonMovies(
+          filteredMovies.filter((movie) => movie.category === "Coming Soon"),
+        );
+      } else {
+        // Basic search or advanced search without date
+        const filterFunction = (movie) => {
+          const query = isAdvancedSearch ? advancedSearch.title : searchQuery;
+          const category = isAdvancedSearch ? advancedSearch.category : '';
+          const matchesTitle = movie.title.toLowerCase().includes(query.toLowerCase());
+          const matchesCategory = category
+            ? movie.genre?.toLowerCase().includes(category.toLowerCase())
+            : true;
+          return matchesTitle && matchesCategory;
+        };
+
+        setFilteredCurrentlyScreeningMovies(
+          currentlyScreeningMovies.filter(filterFunction),
+        );
+        setFilteredComingSoonMovies(
+          comingSoonMovies.filter(filterFunction),
+        );
+      }
+    };
+
+    filterMovies();
+  }, [isAdvancedSearch, advancedSearch, searchQuery, currentlyScreeningMovies, comingSoonMovies, shows]);
 
   const handleAdvancedSearchChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -197,17 +198,6 @@ const HomePage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-  };
-
-  const handleDateChange = (date) => {
-    setAdvancedSearch((prev) => ({
-      ...prev,
-      showDate: date,
-    }));
-  };
-
-  const handleAdvancedSearch = () => {
-    setIsAdvancedSearchOpen(false);
   };
 
   if (isLoading) {
@@ -233,7 +223,7 @@ const HomePage = () => {
             {isAdvancedSearch ? 'Basic Search' : 'Advanced Search'}
           </button>
         </div>
-  
+
         {isAdvancedSearch ? (
           <>
             <div className="relative mb-12">
@@ -257,13 +247,16 @@ const HomePage = () => {
               />
             </div>
             <div className="relative mb-12">
-              <input
-                type="date"
-                placeholder="Search by show date..."
-                name="showDate"
-                value={advancedSearch.showDate}
-                onChange={handleAdvancedSearchChange}
-                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              <DatePicker
+                selected={
+                  advancedSearch.showDate ? new Date(advancedSearch.showDate) : null
+                }
+                onChange={(date) =>
+                  setAdvancedSearch((prev) => ({ ...prev, showDate: date }))
+                }
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Search by show date..."
+                className="w-full px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               />
             </div>
             <div className="relative mb-12">
@@ -278,12 +271,16 @@ const HomePage = () => {
                 Show Date Range
               </label>
               {advancedSearch.showDateRange && (
-                <input
-                  type="date"
-                  name="endDate"
-                  value={advancedSearch.endDate}
-                  onChange={handleAdvancedSearchChange}
-                  className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                <DatePicker
+                  selected={
+                    advancedSearch.endDate ? new Date(advancedSearch.endDate) : null
+                  }
+                  onChange={(date) =>
+                    setAdvancedSearch((prev) => ({ ...prev, endDate: date }))
+                  }
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Select end date"
+                  className="w-full px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 />
               )}
             </div>
@@ -303,8 +300,9 @@ const HomePage = () => {
             />
           </div>
         )}
-  
-        {filteredCurrentlyScreeningMovies.length === 0 && filteredComingSoonMovies.length === 0 ? (
+
+        {filteredCurrentlyScreeningMovies.length === 0 &&
+        filteredComingSoonMovies.length === 0 ? (
           <div className="text-center text-gray-800 text-xl mt-12">
             No results found
           </div>
@@ -317,9 +315,9 @@ const HomePage = () => {
               />
             )}
             {filteredComingSoonMovies.length > 0 && (
-              <MovieCarousel 
-                title="Coming Soon" 
-                movies={filteredComingSoonMovies} 
+              <MovieCarousel
+                title="Coming Soon"
+                movies={filteredComingSoonMovies}
               />
             )}
           </>
