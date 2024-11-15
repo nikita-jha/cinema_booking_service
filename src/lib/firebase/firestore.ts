@@ -5,7 +5,32 @@ import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/
 import { IMovie } from '@/models/movie.model';
 import { IUser } from '@/models/user.model';
 import { IPromotion } from '@/models/promotion.model';
+interface IShow {
+  date: string;
+  movieId: string;
+  roomId: string;
+  time: string;
+}
+export const getMovieById = async (movieId: string): Promise<IMovie | null> => {
+  try {
+    const movieDocRef = doc(db, 'movies', movieId); // Reference to the movie document
+    const movieDoc = await getDoc(movieDocRef); // Fetch the document
 
+    if (movieDoc.exists()) {
+      const movieData = movieDoc.data() as IMovie; // Typecast the document data to IMovie
+      return {
+        id: movieDoc.id,
+        ...movieData,
+      };
+    } else {
+      console.warn(`Movie with ID ${movieId} not found.`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching movie:', error);
+    throw error;
+  }
+};
 
 // Function to create a new user in Firebase Authentication and Firestore
 export const registerUser = async (userData: IUser) => {
@@ -20,7 +45,7 @@ export const registerUser = async (userData: IUser) => {
     await setDoc(doc(db, 'users', user.uid), {
       email,
       firstName,
-      lastName,
+      lastName, 
       phone,
       address: {
         street,
@@ -58,6 +83,50 @@ export const getMovies = async (): Promise<IMovie[]> => {
   console.table(movies.map(movie => ({ id: movie.id, title: movie.title })));
   return movies;
 };
+
+
+export const getShows = async (): Promise<IShow[]> => {
+  console.log('Fetching all shows from Firestore...');
+  const showsCollectionRef = collection(db, 'shows');
+  const showsSnapshot = await getDocs(showsCollectionRef);
+  const shows: IShow[] = showsSnapshot.docs.map(doc => {
+    console.log('%c🔥 DOCUMENT ID: ' + doc.id + ' 🔥', 'color: red; font-size: 24px; font-weight: bold; background-color: yellow; padding: 10px;');
+    return {
+      id: doc.id,
+      ...doc.data() as Omit<IShow, 'id'>,
+    };
+  });
+
+  console.log('%c🎬 SHOWS FETCHED SUCCESSFULLY! 🎬', 'color: green; font-size: 20px; font-weight: bold; background-color: yellow; padding: 10px;');
+  console.table(shows.map(show => ({ id: show.id, movieId: show.movieId })));
+  return shows;
+};
+
+
+export const getShowsMovies = async (): Promise<IMovie[]> => {
+  console.log('Fetching all shows and their corresponding movies from Firestore...');
+  const shows = await getShows();
+  const movies: IMovie[] = [];
+
+  for (const show of shows) {
+    const movieDocRef = doc(db, 'movies', show.movieId);
+    const movieDoc = await getDoc(movieDocRef);
+    if (movieDoc.exists()) {
+      const movieData = movieDoc.data() as IMovie;
+      movies.push({
+        id: movieDoc.id,
+        ...movieData,
+      });
+    } else {
+      console.warn(`Movie with ID ${show.movieId} not found.`);
+    }
+  }
+
+  console.log('%c🎬 SHOWS AND MOVIES FETCHED SUCCESSFULLY! 🎬', 'color: green; font-size: 20px; font-weight: bold; background-color: yellow; padding: 10px;');
+  console.table(movies.map(movie => ({ id: movie.id, title: movie.title })));
+  return movies;
+};
+
 
 export const deleteMovie = async (id: string) => {
   try {

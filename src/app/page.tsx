@@ -1,13 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMovies } from "../lib/firebase/firestore";
+import { getMovies, getShows, getMovieById } from "../lib/firebase/firestore";
 import MovieCard from "../components/movieCard";
 import Navbar from "../components/Navbar";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from 'next/link';
 import { auth } from '../lib/firebase/config'; // Firebase Auth
 import { onAuthStateChanged } from 'firebase/auth';
+import ShowCard from "../components/showCard"; 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+interface IShow {
+  date: string;
+  movieId: string;
+  roomId: string;
+  time: string;
+}
 
 const MovieCarousel = ({ title, movies }) => {
   const [startIndex, setStartIndex] = useState(0);
@@ -70,20 +80,23 @@ const HomePage = () => {
     showDateRange: false,
     endDate: '',
   });
+  const [shows, setShows] = useState<IShow[]>([]);
 
-  const fetchMovies = async () => {
+  const fetchMoviesAndShows = async () => {
     setIsLoading(true);
     try {
       const moviesData = await getMovies();
-      console.log(moviesData); // Check if image URLs are being retrieved
       setCurrentlyScreeningMovies(
         moviesData.filter((movie) => movie.category === "Currently Screening"),
       );
       setComingSoonMovies(
         moviesData.filter((movie) => movie.category === "Coming Soon"),
       );
+
+      const showsData = await getShows();
+      setShows(showsData);
     } catch (error) {
-      console.error("Error fetching movies:", error);
+      console.error("Error fetching movies or shows:", error);
     }
     setIsLoading(false);
   };
@@ -93,13 +106,55 @@ const HomePage = () => {
       setUser(currentUser);
     });
 
-    fetchMovies();
+    fetchMoviesAndShows();
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
+
+  const matchesShowDate = async () => {
+    let filteredMovies = [];
+  
+    try {
+      // Filter shows based on the selected date or date range
+      const filteredShows = shows.filter(show => {
+        if (advancedSearch.showDateRange && advancedSearch.endDate) {
+          const showDate = new Date(show.date);
+          const startDate = new Date(advancedSearch.showDate);
+          const endDate = new Date(advancedSearch.endDate);
+          return showDate >= startDate && showDate <= endDate;
+        } else if (advancedSearch.showDate) {
+          return new Date(show.date).toDateString() === new Date(advancedSearch.showDate).toDateString();
+        }
+        return true;
+      });
+  
+      // For each filtered show, fetch the corresponding movie
+      for (const show of filteredShows) {
+        const movie = await getMovieById(show.movieId);
+        if (movie) {
+          filteredMovies.push(movie);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shows or movies:', error);
+    }
+  
+    return filteredMovies;
+  };
+
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
-  const filteredCurrentlyScreeningMovies = currentlyScreeningMovies.filter(
+  const [filteredMovies, setFilteredMovies] = useState([]);
+
+  useEffect(() => {
+    if (isAdvancedSearch && (advancedSearch.showDate || advancedSearch.showDateRange)) {
+      matchesShowDate().then(setFilteredMovies);
+    } else {
+      setFilteredMovies(currentlyScreeningMovies);
+    }
+  }, [isAdvancedSearch, advancedSearch, currentlyScreeningMovies, shows]);
+
+  const filteredCurrentlyScreeningMovies = filteredMovies.filter(
     (movie) => {
       const matchesTitle = isAdvancedSearch
         ? movie.title.toLowerCase().includes(advancedSearch.title.toLowerCase())
@@ -116,6 +171,7 @@ const HomePage = () => {
       return matchesTitle && matchesCategory && (advancedSearch.showDateRange ? matchesDateRange : matchesShowDate);
     }
   );
+  
   
   const filteredComingSoonMovies = comingSoonMovies.filter(
     (movie) => {
@@ -143,8 +199,14 @@ const HomePage = () => {
     }));
   };
 
+  const handleDateChange = (date) => {
+    setAdvancedSearch((prev) => ({
+      ...prev,
+      showDate: date,
+    }));
+  };
+
   const handleAdvancedSearch = () => {
-    // Implement the advanced search logic here
     setIsAdvancedSearchOpen(false);
   };
 
@@ -181,7 +243,7 @@ const HomePage = () => {
                 name="title"
                 value={advancedSearch.title}
                 onChange={handleAdvancedSearchChange}
-                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               />
             </div>
             <div className="relative mb-12">
@@ -191,7 +253,7 @@ const HomePage = () => {
                 name="category"
                 value={advancedSearch.category}
                 onChange={handleAdvancedSearchChange}
-                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               />
             </div>
             <div className="relative mb-12">
@@ -201,7 +263,7 @@ const HomePage = () => {
                 name="showDate"
                 value={advancedSearch.showDate}
                 onChange={handleAdvancedSearchChange}
-                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               />
             </div>
             <div className="relative mb-12">
@@ -221,7 +283,7 @@ const HomePage = () => {
                   name="endDate"
                   value={advancedSearch.endDate}
                   onChange={handleAdvancedSearchChange}
-                  className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 />
               )}
             </div>
@@ -233,7 +295,7 @@ const HomePage = () => {
               placeholder="Search movies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             />
             <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
