@@ -385,3 +385,42 @@ export const validateSeatAvailability = async (showId: string, seats: number[]) 
     throw error;
   }
 };
+
+export const sendPromotionEmails = async (promotionData: any) => {
+  try {
+    // Get all users who have subscribed to promotional emails
+    const usersSnapshot = await getDocs(
+      query(collection(db, 'users'), where('promotionalEmails', '==', true))
+    );
+
+    const emailPromises = usersSnapshot.docs.map(async (doc) => {
+      const user = doc.data();
+      const emailContent = `
+        New Promotion Alert!
+        
+        Use code: ${promotionData.discountCode}
+        Discount: ${promotionData.value}%
+        Valid from: ${promotionData.startDate}
+        Valid until: ${promotionData.endDate}
+      `;
+
+      // Send email using the API route
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          subject: 'New Cinema Promotion!',
+          message: emailContent,
+        }),
+      });
+    });
+
+    await Promise.all(emailPromises);
+  } catch (error) {
+    console.error('Error sending promotion emails:', error);
+    throw error;
+  }
+};
