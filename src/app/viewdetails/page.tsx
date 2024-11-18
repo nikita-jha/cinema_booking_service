@@ -9,7 +9,6 @@ import { FaStar, FaClock, FaFilm, FaUser, FaPlayCircle, FaUsers } from "react-ic
 import { IoCalendarOutline } from "react-icons/io5";
 import Link from 'next/link';
 
-
 // Helper function to format time to 12-hour format with AM/PM
 const formatTime = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);
@@ -17,6 +16,7 @@ const formatTime = (time24) => {
   const hour12 = hour % 12 || 12; // Convert 0 or 12-hour to 12-hour format
   return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
 };
+
 const MovieDetailsPage = () => {
   const [movieData, setMovieData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ const MovieDetailsPage = () => {
     return <div>Loading...</div>;
   }
 
-  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl, releaseDate } = movieData;
+  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl } = movieData;
 
   let embedUrl = "";
   if (trailerVideoUrl) {
@@ -136,10 +136,6 @@ const MovieDetailsPage = () => {
               <FaPlayCircle className="text-gray-600 mr-2" /> 
               <strong className="mr-2">Category: </strong> {category}
             </div>
-            <div className="flex items-center mb-2">
-              <IoCalendarOutline className="text-gray-600 mr-2" /> 
-              <strong className="mr-2">Released On:</strong> {releaseDate}
-            </div>
             <a
               href={trailerVideoUrl}
               className="text-blue-500 hover:underline"
@@ -164,49 +160,51 @@ const MovieDetailsPage = () => {
 
         {/* Showtime Section */}
         <div className="mb-10 border-t pt-4">
-        <h2 className="text-xl font-semibold mb-3">View Showtimes</h2>
-        <div className="flex items-center mb-4">
-          <input
-            type="date"
-            className="p-2 border rounded w-48"
-            value={selectedDate || ""}
-            onChange={handleDateChange}
-          />
-        </div>
+          <h2 className="text-xl font-semibold mb-3">View Showtimes</h2>
+          <p className="text-gray-500">Please enter a future date.</p>
+          <div className="flex items-center mb-4">
+            <input
+              type="date"
+              className="p-2 border rounded w-48"
+              value={selectedDate || ""}
+              onChange={handleDateChange}
+              min={new Date().toISOString().split("T")[0]} // Restrict to current date or future dates
+            />
+          </div>
 
-        <h3 className="text-lg font-medium mb-2">
-          Available Showtimes on {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }) : "Selected Date"}:
-        </h3>
-        <div className="flex flex-wrap space-x-2">
-          {showtimes.length > 0 ? (
-            showtimes.map((time, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 rounded-full bg-teal-500 text-white text-lg font-semibold mb-2"
-              >
-                {formatTime(time)}
-              </span>
-            ))
-          ) : (
-            <p className="text-gray-500">No showtimes available for this date.</p>
-          )}
-        </div>
-        <Link
-          href={{
-            pathname: '/booking',
-            query: {
-              title: title,
-            },
-          }}
-        >
+          <h3 className="text-lg font-medium mb-2">
+            Available Showtimes on {selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }) : "Selected Date"}:
+          </h3>
+          <div className="flex flex-wrap space-x-2">
+            {showtimes.length > 0 ? (
+              showtimes.map((time, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 rounded-full bg-teal-500 text-white text-lg font-semibold mb-2"
+                >
+                  {formatTime(time)}
+                </span>
+              ))
+            ) : (
+              <p className="text-gray-500">No showtimes available for this date.</p>
+            )}
+          </div>
+          <Link
+            href={{
+              pathname: '/booking',
+              query: {
+                title: title,
+              },
+            }}
+          >
             <button
-            onClick={handleProceedToBooking}
-            className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
+              onClick={handleProceedToBooking}
+              className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
             >
-            Proceed to Booking
+              Proceed to Booking
             </button>
-        </Link>
-      </div>
+          </Link>
+        </div>
       </div>
     </div>
   );
