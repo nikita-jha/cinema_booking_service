@@ -1,10 +1,10 @@
 "use client";
 
-import Navbar from '../../components/Navbar';
+import Navbar from '../../../components/Navbar';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { sendPasswordResetEmail, signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence, setPersistence, onAuthStateChanged, fetchSignInMethodsForEmail, sendEmailVerification } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase/config';
+import { auth, db } from '@/controller/firebase/config';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { useUser } from '../../context/UserContext';

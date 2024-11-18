@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Navbar from "../../../components/Navbar";
+import Navbar from "../../../../components/Navbar";
 import Link from "next/link";
-import AddUser from "../../../components/AddUser";
-import EditUser from "../../../components/EditUser";
+import AddUser from "../../../../components/AddUser";
+import EditUser from "../../../../components/EditUser";
 import { IUser } from "../../../models/user.model";
-import { deleteUser, getUsers } from "../../../lib/firebase/firestore"; 
+import { deleteUser, getUsers } from "../../../controller/firebase/firestore"; 
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../../../lib/firebase/config";
-import useRequireAuth from '../../../components/RequireAuth';
+import { db } from "../../../controller/firebase/config";
+import useRequireAuth from '../../../../components/RequireAuth';
 
 const AdminPortalHomePage = () => {
   useRequireAuth();

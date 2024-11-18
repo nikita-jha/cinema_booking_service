@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addPromotion } from "../lib/firebase/firestore";
+import { addPromotion } from "../controller/firebase/firestore";
 
 interface AddPromotionProps {
   onPromotionAdded: () => void; // Callback to notify when a promotion is added

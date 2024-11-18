@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addUser } from "../lib/firebase/firestore";
+import { addUser } from "../controller/firebase/firestore";
 
 interface AddUserProps {
   onUserAdded: () => void; // Callback to notify when a user is added

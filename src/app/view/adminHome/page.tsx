@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db } from "../../lib/firebase/config"; // Import auth and db from Firebase config
+import { auth, db } from "../../controller/firebase/config"; // Import auth and db from Firebase config
 import { onAuthStateChanged } from "firebase/auth"; // Firebase Auth
 import { doc, getDoc } from "firebase/firestore"; // Firebase Firestore
-import Navbar from "../../components/Navbar";
+import Navbar from "../../../components/Navbar";
 import Link from "next/link";
-import useRequireAuth from '../../components/RequireAuth';
+import useRequireAuth from '../../../components/RequireAuth';
 import AddRoom from "@/components/AddRoom";
 
 const AdminPortalHomePage = () => {

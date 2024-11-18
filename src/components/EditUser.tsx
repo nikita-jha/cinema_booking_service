@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { updateUser } from "../lib/firebase/firestore";
+import { updateUser } from "../controller/firebase/firestore";
 import { IUser } from "@/models/user.model";
 
 interface EditUserProps {

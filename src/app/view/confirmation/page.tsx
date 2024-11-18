@@ -2,9 +2,9 @@
 
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
-import Navbar from '../../components/Navbar';
+import Navbar from '../../../components/Navbar';
 import Link from 'next/link';
-import useRequireAuth from '../../components/RequireAuth';
+import useRequireAuth from '../../../components/RequireAuth';
 
 const generateOrderNumber = () => {
   useRequireAuth();

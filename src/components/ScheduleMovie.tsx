@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { addMovieScheduleWithSeats, getRooms, getMovieSchedules } from "../lib/firebase/firestore";
+import { addMovieScheduleWithSeats, getRooms, getMovieSchedules } from "../controller/firebase/firestore";
 
 interface ScheduleMovieProps {
   movie: { id: string };

@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Navbar from '../../components/Navbar';
+import Navbar from '../../../components/Navbar';
 import { useRouter } from 'next/navigation';
-import { auth } from '../../lib/firebase/config'; 
+import { auth } from '../../controller/firebase/config'; 
 import { Button } from '@mui/material';
 import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
+import { db } from '../../controller/firebase/config';
 import CryptoJS from 'crypto-js'; 
 
 

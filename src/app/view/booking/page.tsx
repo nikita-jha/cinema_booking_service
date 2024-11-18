@@ -2,11 +2,11 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import Navbar from "../../components/Navbar";
-import { db, auth } from "../../lib/firebase/config"; 
+import Navbar from "../../../components/Navbar";
+import { db, auth } from "../../controller/firebase/config"; 
 import { onAuthStateChanged } from "firebase/auth"; // Import this function
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../lib/firebase/firestore";
+import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../controller/firebase/firestore";
 
 const formatTime = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);

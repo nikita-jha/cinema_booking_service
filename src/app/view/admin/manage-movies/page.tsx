@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Navbar from "../../../components/Navbar";
+import Navbar from "../../../../components/Navbar";
 import Link from "next/link";
-import AddMovie from "../../../components/AddMovie";
-import EditMovie from "../../../components/EditMovie";
-import ScheduleMovie from "../../../components/ScheduleMovie";
+import AddMovie from "../../../../components/AddMovie";
+import EditMovie from "../../../../components/EditMovie";
+import ScheduleMovie from "../../../../components/ScheduleMovie";
 import { IMovie } from "../../../models/movie.model";
-import { deleteMovie, getMovies } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
-import useRequireAuth from '../../../components/RequireAuth';
+import { deleteMovie, getMovies } from "../../../controller/firebase/firestore"; // Assuming this is the correct path to your firestore utility
+import useRequireAuth from '../../../../components/RequireAuth';
 
 const AdminPortalHomePage = () => {
   useRequireAuth();

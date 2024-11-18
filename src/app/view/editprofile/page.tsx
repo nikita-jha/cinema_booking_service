@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import Navbar from "../../components/Navbar";
-import { auth, db } from "../../lib/firebase/config";
+import Navbar from "../../../components/Navbar";
+import { auth, db } from "../../controller/firebase/config";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { updatePassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import ChangePassword from "../../components/ChangePassword";
+import ChangePassword from "../../../components/ChangePassword";
 import { useUser} from "../../context/UserContext";
 import CryptoJS from 'crypto-js';
 import { User } from "firebase/auth";
-import useRequireAuth from '../../components/RequireAuth';
+import useRequireAuth from '../../../components/RequireAuth';
 
 
 const EditProfilePage = () => {

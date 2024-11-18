@@ -2,8 +2,8 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import Navbar from "../../components/Navbar";
-import { db } from "../../lib/firebase/config";
+import Navbar from "../../../components/Navbar";
+import { db } from "../../controller/firebase/config";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { FaStar, FaClock, FaFilm, FaUser, FaPlayCircle, FaUsers } from "react-icons/fa";
 import { IoCalendarOutline } from "react-icons/io5";
