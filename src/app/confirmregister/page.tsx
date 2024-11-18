@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '../../lib/firebase/config';
-import { db } from '../../lib/firebase/config';
+import { auth } from '../../controller/firebase/config';
+import { db } from '../../controller/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore'; 
 import Navbar from '../../components/Navbar';
 

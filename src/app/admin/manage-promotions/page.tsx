@@ -5,7 +5,7 @@ import Navbar from "../../../components/Navbar";
 import AddPromotion from "../../../components/AddPromotion";
 import EditPromotion from "../../../components/EditPromotion";
 import { IPromotion } from "../../../models/promotion.model";
-import { deletePromotion, getPromotions } from "../../../lib/firebase/firestore"; // Assuming this is the correct path to your firestore utility
+import { deletePromotion, getPromotions } from "../../../controller/firebase/firestore"; // Assuming this is the correct path to your firestore utility
 import useRequireAuth from '../../../components/RequireAuth';
 
 const ManagePromotionsPage = () => {

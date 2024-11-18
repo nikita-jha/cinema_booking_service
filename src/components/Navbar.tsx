@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "../context/UserContext";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, db } from "@/lib/firebase/config";
+import { auth, db } from "@/controller/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 
 const Navbar: React.FC = () => {
