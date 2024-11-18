@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { updatePromotion } from "../controller/firebase/firestore";
-import { IPromotion } from "@/models/promotion.model";
+import { updatePromotion } from "../application/firebase/firestore";
+import { IPromotion } from "@/domain/promotion.model";
 
 interface EditPromotionProps {
   promotion: IPromotion;

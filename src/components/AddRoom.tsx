@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addRoom } from "../controller/firebase/firestore";
+import { addRoom } from "../application/firebase/firestore";
 
 interface AddRoomProps {
     onRoomAdded: () => void; // Callback to notify when a room is added

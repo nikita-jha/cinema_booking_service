@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/controller/firebase/config';
+import { auth, db } from '@/application/firebase/config';
 import { doc, getDoc } from 'firebase/firestore'; // Import Firestore functions
 
 const useRequireAuth = () => {

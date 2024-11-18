@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { updateMovie } from "../controller/firebase/firestore";
-import { IMovie } from "@/models/movie.model";
+import { updateMovie } from "../application/firebase/firestore";
+import { IMovie } from "@/domain/movie.model";
 
 interface EditMovieProps {
   movie: IMovie;

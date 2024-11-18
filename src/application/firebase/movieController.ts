@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './config';
-import { IMovie } from '@/models/movie.model';
+import { IMovie } from '@/domain/movie.model';
 
 export const getMovies = async (): Promise<IMovie[]> => {
   const moviesCollectionRef = collection(db, 'movies');

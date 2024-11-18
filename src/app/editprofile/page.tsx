@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../../components/Navbar";
-import { auth, db } from "../../controller/firebase/config";
+import { auth, db } from "../../application/firebase/config";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { updatePassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";

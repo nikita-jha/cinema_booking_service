@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './config';
-import { IPromotion } from '@/models/promotion.model';
+import { IPromotion } from '@/domain/promotion.model';
 
 export const getPromotions = async (): Promise<IPromotion[]> => {
   const promotionsCollectionRef = collection(db, 'promotions');

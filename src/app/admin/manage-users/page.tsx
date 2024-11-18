@@ -5,10 +5,10 @@ import Navbar from "../../../components/Navbar";
 import Link from "next/link";
 import AddUser from "../../../components/AddUser";
 import EditUser from "../../../components/EditUser";
-import { IUser } from "../../../models/user.model";
-import { deleteUser, getUsers } from "../../../controller/firebase/firestore"; 
+import { IUser } from "../../../domain/user.model";
+import { deleteUser, getUsers } from "../../../application/firebase/firestore"; 
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../../../controller/firebase/config";
+import { db } from "../../../application/firebase/config";
 import useRequireAuth from '../../../components/RequireAuth';
 
 const AdminPortalHomePage = () => {

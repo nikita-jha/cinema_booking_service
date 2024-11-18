@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addMovie } from "../controller/firebase/firestore";
+import { addMovie } from "../application/firebase/firestore";
 
 interface AddMovieProps {
   onMovieAdded: () => void; // Callback to notify when a movie is added

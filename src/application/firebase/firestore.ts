@@ -2,9 +2,9 @@ import { writeBatch, getDocs, collection, addDoc, deleteDoc, doc, updateDoc, get
 import { db } from './config';
 import { auth } from './config'; // Add Firebase Auth import
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'; // Import auth functions
-import { IMovie } from '@/models/movie.model';
-import { IUser } from '@/models/user.model';
-import { IPromotion } from '@/models/promotion.model';
+import { IMovie } from '@/domain/movie.model';
+import { IUser } from '@/domain/user.model';
+import { IPromotion } from '@/domain/promotion.model';
 
 
 // Function to create a new user in Firebase Authentication and Firestore

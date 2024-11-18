@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMovies } from "../controller/firebase/firestore";
+import { getMovies } from "../application/firebase/firestore";
 import MovieCard from "../components/movieCard";
 import Navbar from "../components/Navbar";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from 'next/link';
-import { auth, db } from '../controller/firebase/config'; // Firebase Auth and Firestore
+import { auth, db } from '../application/firebase/config'; // Firebase Auth and Firestore
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 

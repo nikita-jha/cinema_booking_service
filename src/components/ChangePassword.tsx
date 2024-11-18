@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { auth } from '../controller/firebase/config';
+import { auth } from '../application/firebase/config';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 

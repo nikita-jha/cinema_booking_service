@@ -1,7 +1,7 @@
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { db, auth } from './config';
-import { IUser } from '@/models/user.model';
+import { IUser } from '@/domain/user.model';
 
 // Function to create a new user in Firebase Authentication and Firestore
 export const registerUser = async (userData: IUser) => {
