@@ -3,8 +3,10 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
-import { db } from "../../lib/firebase/config";
+import { db, auth } from "../../lib/firebase/config"; 
+import { onAuthStateChanged } from "firebase/auth"; // Import this function
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../lib/firebase/firestore";
 
 const formatTime = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);
@@ -20,6 +22,8 @@ const BookingPage = () => {
   const [showtimes, setShowtimes] = useState<string[]>([]);
   const [selectedShowtime, setSelectedShowtime] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<{ seat: number; age: number }[]>([]);
+  const [seatData, setSeatData] = useState<{ seatNumber: number; isReserved: boolean; reservedBy: string | null }[]>([]);
+  const [userId, setUserId] = useState<string | null>(null); // Store user ID
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
   const router = useRouter();
@@ -27,6 +31,18 @@ const BookingPage = () => {
   const currentDate = new Date();
   const currentDateString = currentDate.toISOString().split("T")[0]; // Format as yyyy-mm-dd
 
+  useEffect(() => {
+    // Monitor the logged-in user
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid); // Set user ID
+      } else {
+        setUserId(null); // Handle unauthenticated state
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup listener
+  }, []);
 
   useEffect(() => {
     const fetchMovieData = async () => {
@@ -54,6 +70,12 @@ const BookingPage = () => {
     fetchMovieData();
   }, [title]);
 
+  useEffect(() => {
+    if (selectedShowtime) {
+      fetchSeats(selectedShowtime); // Fetch seats for the selected showtime
+    }
+  }, [selectedShowtime]);
+
   const fetchShowtimesForDate = async (date: string) => {
     if (!movieData) return;
 
@@ -64,7 +86,7 @@ const BookingPage = () => {
 
       const times = snapshot.docs.map((doc) => doc.data().time);
       setShowtimes(times);
-      setSelectedShowtime(null); // reset selected showtime
+      setSelectedShowtime(null); // Reset selected showtime
     } catch (error) {
       console.error("Error fetching showtimes:", error);
     }
@@ -74,6 +96,19 @@ const BookingPage = () => {
     const date = e.target.value;
     setSelectedDate(date);
     fetchShowtimesForDate(date);
+  };
+
+  const fetchSeats = async () => {
+    if (!movieData || !selectedDate || !selectedShowtime) return;
+  
+    try {
+      const showId = `${movieData.id}-${selectedDate}-${selectedShowtime}`; // Construct full showId
+      console.log(`Fetching seats for showId: ${showId}`);
+      const seats = await fetchSeatsForShow(showId);
+      setSeatData(seats);
+    } catch (error) {
+      console.error("Error fetching seats:", error);
+    }
   };
 
   const handleSeatClick = (seat: number) => {
@@ -93,18 +128,44 @@ const BookingPage = () => {
     );
   };
 
-  const handleCheckout = () => {
-    if (selectedSeats.every((s) => s.age > 0)) {
+  const handleCheckout = async () => {
+    if (!selectedShowtime || !movieData || !selectedDate) return;
+  
+    try {
+      const showId = `${movieData.id}-${selectedDate}-${selectedShowtime}`; // Construct full showId
+      console.log(`Reserving seats for showId: ${showId}`);
+  
+      if (!userId) {
+        alert("Please log in to reserve seats.");
+        return;
+      }
+  
+      const unavailableSeats = await validateSeatAvailability(
+        showId,
+        selectedSeats.map((s) => s.seat)
+      );
+  
+      if (unavailableSeats.length > 0) {
+        alert(`The following seats are no longer available: ${unavailableSeats.join(", ")}`);
+        return;
+      }
+  
+      await reserveSeats(showId, selectedSeats, userId);
       router.push("/checkout");
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      alert("Failed to reserve seats. Please try again.");
     }
   };
+  
+  
 
   return (
     <div>
       <Navbar />
       <div className="container mx-auto p-4">
         <h1 className="text-3xl font-bold mb-6">Book Tickets</h1>
-        
+
         <div className="flex flex-col md:flex-row gap-6">
           {/* Left Side: Movie & Date/Showtime */}
           <div className="w-full md:w-1/2">
@@ -128,7 +189,6 @@ const BookingPage = () => {
             {selectedDate && (
               <div>
                 <h3 className="text-lg font-semibold mb-2">Available Showtimes:</h3>
-                <h3 className="text-sm mb-2">Please select one.</h3>
                 <div className="flex flex-wrap gap-2">
                   {showtimes.length > 0 ? (
                     showtimes.map((time, index) => (
@@ -150,12 +210,7 @@ const BookingPage = () => {
                 </div>
               </div>
             )}
-          {selectedShowtime && (
-            <p className="text-lg text-gray-700 mt-4">
-              Ticket selection now available. Choose from the available seats on the right.
-            </p>
-          )}
-        </div>
+          </div>
 
           {/* Right Side: Seats */}
           <div className="w-full md:w-1/2">
@@ -164,19 +219,26 @@ const BookingPage = () => {
             <div className="text-center mb-4">Screen</div>
             <hr className="border-t-2 border-gray-300 mb-4" />
             <div className="grid grid-cols-10 gap-2 mb-4">
-              {[...Array(100)].map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSeatClick(index + 1)}
-                  className={`w-8 h-8 rounded ${
-                    selectedSeats.some((s) => s.seat === index + 1)
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-300"
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+              {seatData.length > 0 ? (
+                seatData.map((seat) => (
+                  <button
+                    key={seat.seatNumber}
+                    onClick={() => handleSeatClick(seat.seatNumber)}
+                    disabled={seat.isReserved}
+                    className={`w-8 h-8 rounded ${
+                      seat.isReserved
+                        ? "bg-red-500 text-white cursor-not-allowed"
+                        : selectedSeats.some((s) => s.seat === seat.seatNumber)
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-300"
+                    }`}
+                  >
+                    {seat.seatNumber}
+                  </button>
+                ))
+              ) : (
+                <p className="text-gray-500">No seats available for this showtime.</p>
+              )}
             </div>
           </div>
         </div>
@@ -208,7 +270,7 @@ const BookingPage = () => {
           onClick={handleCheckout}
           disabled={!selectedSeats.length || !selectedSeats.every((s) => s.age > 0)}
           className={`mt-6 px-4 py-2 rounded text-white font-bold ${
-            selectedSeats.length && selectedSeats.every((s) => s.age > 0)
+            selectedSeats.length && selectedSeats.every((s) => s.age > 0 && s.age < 120)
               ? "bg-green-500"
               : "bg-gray-400 cursor-not-allowed"
           }`}

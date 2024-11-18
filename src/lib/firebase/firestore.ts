@@ -1,4 +1,4 @@
-import { getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc, deleteField, query, where } from 'firebase/firestore'; // Ensure setDoc is imported
+import { writeBatch, getDocs, collection, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc, deleteField, query, where } from 'firebase/firestore'; // Ensure setDoc is imported
 import { db } from './config';
 import { auth } from './config'; // Add Firebase Auth import
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'; // Import auth functions
@@ -231,58 +231,157 @@ export const getRooms = async (): Promise<any[]> => {
   }));
 };
 
-// Function to add a movie schedule with a conflict check
-export const addMovieScheduleWithConflictCheck = async (
+
+export const addMovieScheduleWithSeats = async (
   movieId: string,
   date: string,
   startTime: string,
-  roomId: string
+  roomId: string,
+  totalSeats = 100 // Default total seats
 ) => {
   try {
-    // Reference the top-level "Shows" collection to check for conflicts
-    const showsRef = collection(db, 'Shows');
-    const roomDateQuery = query(showsRef, where("date", "==", date), where("roomId", "==", roomId));
+    // Reference top-level "Shows" collection
+    const showsRef = collection(db, "Shows");
+
+    // Query for existing schedules with the same date and room
+    const roomDateQuery = query(
+      showsRef,
+      where("date", "==", date),
+      where("roomId", "==", roomId)
+    );
     const scheduleSnapshot = await getDocs(roomDateQuery);
 
+    // Convert the new schedule's start and end times to Date objects
     const newScheduleStart = new Date(`${date}T${startTime}`);
-    const newScheduleEnd = new Date(newScheduleStart.getTime() + 3 * 60 * 60 * 1000);
+    const newScheduleEnd = new Date(newScheduleStart.getTime() + 3 * 60 * 60 * 1000); // Assuming 3-hour duration
 
-    console.log("Checking for conflicts in top-level 'Shows' collection...");
+    // Check for conflicts with existing schedules
     let conflictExists = false;
 
-    scheduleSnapshot.forEach(doc => {
+    scheduleSnapshot.forEach((doc) => {
       const schedule = doc.data();
-      console.log("Existing schedule:", schedule);
-
       const existingStart = new Date(`${schedule.date}T${schedule.time}`);
       const existingEnd = new Date(existingStart.getTime() + 3 * 60 * 60 * 1000);
 
       if (
-        (newScheduleStart >= existingStart && newScheduleStart < existingEnd) ||
-        (newScheduleEnd > existingStart && newScheduleEnd <= existingEnd) ||
-        (newScheduleStart <= existingStart && newScheduleEnd >= existingEnd)
+        (newScheduleStart >= existingStart && newScheduleStart < existingEnd) || // Overlaps start
+        (newScheduleEnd > existingStart && newScheduleEnd <= existingEnd) || // Overlaps end
+        (newScheduleStart <= existingStart && newScheduleEnd >= existingEnd) // Fully overlaps
       ) {
         conflictExists = true;
-        console.log("Conflict detected with schedule:", schedule);
       }
     });
 
     if (conflictExists) {
-      throw new Error('Scheduling conflict detected. Please choose a different time.');
+      throw new Error("Scheduling conflict detected. Please choose a different time or room.");
     }
 
-    // If no conflicts, add the new schedule in the top-level "Shows" collection
-    const newShowRef = doc(db, 'Shows', `${movieId}-${date}-${startTime}`);
+    // Add the new Show document if no conflict
+    const newShowRef = doc(db, "Shows", `${movieId}-${date}-${startTime}`);
     await setDoc(newShowRef, {
       movieId,
       date,
       time: startTime,
-      roomId
+      roomId,
     });
 
-    console.log('Schedule added successfully!');
+    // Initialize seats for this show
+    await initializeSeatsForShow(`${movieId}-${date}-${startTime}`, totalSeats);
+
+    console.log("Show and seats added successfully!");
   } catch (error) {
-    console.error('Error adding schedule:', error);
+    console.error("Error adding show and seats:", error);
+    throw error;
+  }
+};
+
+
+
+export const fetchSeatsForShow = async (showId: string) => {
+  const seatsRef = collection(db, "Shows", showId, "Seats");
+  const seatsSnapshot = await getDocs(seatsRef);
+
+  const seats = seatsSnapshot.docs.map((doc) => ({
+    seatNumber: doc.data().seatNumber,
+    isReserved: doc.data().isReserved,
+    reservedBy: doc.data().reservedBy,
+  }));
+
+  // Sort seats numerically by seatNumber
+  seats.sort((a, b) => a.seatNumber - b.seatNumber);
+
+  console.log("Fetched and sorted seats:", seats);
+  return seats;
+};
+
+export const reserveSeats = async (
+  showId: string,
+  seats: { seat: number; age: number }[],
+  userId: string
+) => {
+  try {
+    const seatsRef = collection(db, "Shows", showId, "Seats");
+
+    for (const { seat, age } of seats) {
+      const seatDocRef = doc(seatsRef, `seat${seat}`);
+      await updateDoc(seatDocRef, {
+        isReserved: true,
+        reservedBy: userId,
+        reservationTimestamp: new Date().toISOString(),
+        age, // Ensure age is included
+      });
+    }
+
+    // console.log("Seats reserved successfully!");
+  } catch (error) {
+    console.error("Error reserving seats:", error);
+    throw error;
+  }
+};
+
+
+
+export const initializeSeatsForShow = async (showId: string, totalSeats: number) => {
+  try {
+    const seatsRef = collection(db, "Shows", showId, "Seats");
+    const batch = writeBatch(db); // Correct usage of writeBatch
+
+    for (let i = 1; i <= totalSeats; i++) {
+      const seatDocRef = doc(seatsRef, `seat${i}`);
+      batch.set(seatDocRef, {
+        seatNumber: i,
+        isReserved: false,
+        reservedBy: null,
+        reservationTimestamp: null,
+      });
+    }
+
+    await batch.commit(); // Commit the batch
+    console.log(`Initialized ${totalSeats} seats for show: ${showId}`);
+  } catch (error) {
+    console.error("Error initializing seats:", error);
+    throw error;
+  }
+};
+
+export const validateSeatAvailability = async (showId: string, seats: number[]) => {
+  try {
+    const seatsRef = collection(db, "Shows", showId, "Seats");
+    const snapshot = await getDocs(seatsRef);
+
+    const unavailableSeats = seats.filter((seatNumber) => {
+      const seatDoc = snapshot.docs.find((doc) => doc.id === `seat${seatNumber}`);
+      return seatDoc?.data()?.isReserved;
+    });
+
+    if (unavailableSeats.length > 0) {
+      console.error("Some seats are already reserved:", unavailableSeats);
+      return unavailableSeats;
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error validating seat availability:", error);
     throw error;
   }
 };

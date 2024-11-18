@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { addMovieScheduleWithConflictCheck, getRooms, getMovieSchedules } from "../lib/firebase/firestore";
+import { addMovieScheduleWithSeats, getRooms, getMovieSchedules } from "../lib/firebase/firestore";
 
 interface ScheduleMovieProps {
   movie: { id: string };
@@ -46,7 +46,7 @@ const ScheduleMovie: React.FC<ScheduleMovieProps> = ({ movie, onScheduleAdded })
 
     try {
       // Attempt to add schedule with conflict check
-      await addMovieScheduleWithConflictCheck(
+      await addMovieScheduleWithSeats(
         movie.id,
         scheduleData.date,
         scheduleData.time,
