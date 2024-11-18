@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addPromotion } from "../lib/firebase/firestore";
+import { addPromotion, sendPromotionEmails } from "../lib/firebase/firestore";
 
 interface AddPromotionProps {
   onPromotionAdded: () => void; // Callback to notify when a promotion is added
@@ -34,8 +34,12 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
         startDate: "",
         endDate: "",
       }); // Reset the form fields
+
+      // Send emails to subscribers
+      await sendPromotionEmails(promotionData);
+      console.log("Promotion emails sent successfully!");
     } catch (error) {
-      console.error("Error adding promotion:", error);
+      console.error("Error adding promotion or sending emails:", error);
     }
   };
 
