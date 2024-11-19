@@ -12,6 +12,9 @@ interface EditMovieProps {
 const EditMovie: React.FC<EditMovieProps> = ({ movie, onMovieUpdated }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [movieData, setMovieData] = useState<IMovie>(movie);
+  const [validationMessages, setValidationMessages] = useState({
+    mpaaRating: "",
+  });
 
   useEffect(() => {
     setMovieData(movie);
@@ -20,10 +23,33 @@ const EditMovie: React.FC<EditMovieProps> = ({ movie, onMovieUpdated }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setMovieData({ ...movieData, [name]: value });
+
+    if (name === "mpaaRating") {
+      validateMpaaRating(value);
+    }
+  };
+
+  const validateMpaaRating = (value) => {
+    const validMpaaRatings = ["G", "PG", "PG-13", "R", "NC-17"];
+    let message = "";
+    if (!validMpaaRatings.includes(value)) {
+      message = "Invalid MPAA rating. Please enter a valid rating (G, PG, PG-13, R, NC-17).";
+    }
+    setValidationMessages((prevMessages) => ({
+      ...prevMessages,
+      mpaaRating: message,
+    }));
   };
 
   const handleUpdateMovie = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate MPAA rating
+    if (validationMessages.mpaaRating) {
+      alert(validationMessages.mpaaRating);
+      return;
+    }
+
     try {
       await updateMovie(movie.id, movieData);
       console.log("Movie successfully updated!");
@@ -123,15 +149,17 @@ const EditMovie: React.FC<EditMovieProps> = ({ movie, onMovieUpdated }) => {
                 placeholder="Trailer Picture URL"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
               />
+              <label htmlFor="mpaaRating">MPAA Rating:</label>
               <input
                 type="text"
+                id="mpaaRating"
                 name="mpaaRating"
                 value={movieData.mpaaRating}
                 onChange={handleInputChange}
-                placeholder="MPAA Rating"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
+              {validationMessages.mpaaRating && <p className="text-red-500 text-sm mt-1">{validationMessages.mpaaRating}</p>}
               <select
                 name="category"
                 value={movieData.category}
