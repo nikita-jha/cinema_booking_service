@@ -113,7 +113,7 @@ const ScheduleMovie: React.FC<ScheduleMovieProps> = ({ movie, onScheduleAdded })
                   <option value="">Select a room</option>
                   {allRooms.map((room) => (
                     <option key={room.id} value={room.id}>
-                      {room.name} (Seats: {room.seatsAvailable})
+                      {room.name} (Room Number: {room.id}, Seats: {room.seatsAvailable})
                     </option>
                   ))}
                 </select>
