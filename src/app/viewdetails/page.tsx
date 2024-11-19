@@ -93,7 +93,7 @@ const MovieDetailsPage = () => {
     return <div>Loading...</div>;
   }
 
-  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl } = movieData;
+  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl, runtime, releaseDate, reviews = [], showDates = [] } = movieData;
 
   let embedUrl = "";
   if (trailerVideoUrl) {
@@ -189,6 +189,16 @@ const MovieDetailsPage = () => {
               <p className="text-gray-500">No showtimes available for this date.</p>
             )}
           </div>
+          <div className="mb-8 border-t pt-4">
+        <h2 className="text-xl font-semibold mb-3">Reviews</h2>
+        {reviews ? (
+            <div className="border p-4 rounded-lg mb-4 shadow-md">
+            <p className="text-gray-700">{reviews}</p>
+            </div>
+        ) : (
+            <p>No reviews available for this movie.</p>
+        )}
+        </div>
           <Link
             href={{
               pathname: '/booking',
