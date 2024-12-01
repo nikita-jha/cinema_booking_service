@@ -24,6 +24,7 @@ const BookingPage = () => {
   const [selectedSeats, setSelectedSeats] = useState<{ seat: number; age: number }[]>([]);
   const [seatData, setSeatData] = useState<{ seatNumber: number; isReserved: boolean; reservedBy: string | null }[]>([]);
   const [userId, setUserId] = useState<string | null>(null); // Store user ID
+  const [roomId, setRoomId] = useState<string | null>(null); // Add state for room ID
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
   const router = useRouter();
@@ -72,7 +73,11 @@ const BookingPage = () => {
 
   useEffect(() => {
     if (selectedShowtime) {
+      setSelectedSeats([]); // Clear selected seats when showtime changes
       fetchSeats(selectedShowtime); // Fetch seats for the selected showtime
+      fetchRoomId(); // Fetch room ID when showtime is selected
+    } else {
+      setRoomId(null); // Clear room ID when no showtime is selected
     }
   }, [selectedShowtime]);
 
@@ -87,22 +92,46 @@ const BookingPage = () => {
       const times = snapshot.docs.map((doc) => doc.data().time);
       setShowtimes(times);
       setSelectedShowtime(null); // Reset selected showtime
+      setRoomId(null); // Reset room ID when date changes
     } catch (error) {
       console.error("Error fetching showtimes:", error);
+    }
+  };
+
+  const fetchRoomId = async () => {
+    if (!movieData || !selectedDate || !selectedShowtime) return;
+    
+    try {
+      const showsRef = collection(db, "Shows");
+      const q = query(
+        showsRef, 
+        where("movieId", "==", movieData.id),
+        where("date", "==", selectedDate),
+        where("time", "==", selectedShowtime)
+      );
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const showData = snapshot.docs[0].data();
+        setRoomId(showData.roomId);
+      }
+    } catch (error) {
+      console.error("Error fetching room ID:", error);
     }
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value;
     setSelectedDate(date);
+    setSelectedSeats([]); // Clear selected seats when date changes
     fetchShowtimesForDate(date);
   };
 
-  const fetchSeats = async () => {
-    if (!movieData || !selectedDate || !selectedShowtime) return;
+  const fetchSeats = async (showtime: string) => {
+    if (!movieData || !selectedDate) return;
   
     try {
-      const showId = `${movieData.id}-${selectedDate}-${selectedShowtime}`; // Construct full showId
+      const showId = `${movieData.id}-${selectedDate}-${showtime}`; // Construct full showId
       console.log(`Fetching seats for showId: ${showId}`);
       const seats = await fetchSeatsForShow(showId);
       setSeatData(seats);
@@ -214,32 +243,37 @@ const BookingPage = () => {
 
           {/* Right Side: Seats */}
           <div className="w-full md:w-1/2">
-            <h3 className="text-lg font-semibold mb-4">Select Seats:</h3>
-            <hr className="border-t-2 border-gray-300 mb-4" />
-            <div className="text-center mb-4">Screen</div>
-            <hr className="border-t-2 border-gray-300 mb-4" />
-            <div className="grid grid-cols-10 gap-2 mb-4">
-              {seatData.length > 0 ? (
-                seatData.map((seat) => (
-                  <button
-                    key={seat.seatNumber}
-                    onClick={() => handleSeatClick(seat.seatNumber)}
-                    disabled={seat.isReserved}
-                    className={`w-8 h-8 rounded ${
-                      seat.isReserved
-                        ? "bg-red-500 text-white cursor-not-allowed"
-                        : selectedSeats.some((s) => s.seat === seat.seatNumber)
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-300"
-                    }`}
-                  >
-                    {seat.seatNumber}
-                  </button>
-                ))
-              ) : (
-                <p className="text-gray-500">No seats available for this showtime.</p>
-              )}
-            </div>
+            {selectedShowtime && roomId && (
+              <>
+                <h2 className="text-xl font-bold mb-4">Room ID: {roomId}</h2>
+                <h3 className="text-lg font-semibold mb-4">Select Seats:</h3>
+                <hr className="border-t-2 border-gray-300 mb-4" />
+                <div className="text-center mb-4">Screen</div>
+                <hr className="border-t-2 border-gray-300 mb-4" />
+                <div className="grid grid-cols-10 gap-2 mb-4">
+                  {seatData.length > 0 ? (
+                    seatData.map((seat) => (
+                      <button
+                        key={seat.seatNumber}
+                        onClick={() => handleSeatClick(seat.seatNumber)}
+                        disabled={seat.isReserved}
+                        className={`w-8 h-8 rounded ${
+                          seat.isReserved
+                            ? "bg-red-500 text-white cursor-not-allowed"
+                            : selectedSeats.some((s) => s.seat === seat.seatNumber)
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {seat.seatNumber}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No seats available for this showtime.</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
