@@ -157,34 +157,21 @@ const BookingPage = () => {
     );
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!selectedShowtime || !movieData || !selectedDate) return;
   
-    try {
-      const showId = `${movieData.id}-${selectedDate}-${selectedShowtime}`; // Construct full showId
-      console.log(`Reserving seats for showId: ${showId}`);
+    // Construct the showId
+    const showId = `${movieData.id}-${selectedDate}-${selectedShowtime}`;
   
-      if (!userId) {
-        alert("Please log in to reserve seats.");
-        return;
-      }
+    // Construct query string for URL
+    const queryParams = new URLSearchParams({
+      showId,
+      selectedSeats: JSON.stringify(selectedSeats), // Convert array to string
+      userId: userId || "", // Default to empty string if userId is null
+    });
   
-      const unavailableSeats = await validateSeatAvailability(
-        showId,
-        selectedSeats.map((s) => s.seat)
-      );
-  
-      if (unavailableSeats.length > 0) {
-        alert(`The following seats are no longer available: ${unavailableSeats.join(", ")}`);
-        return;
-      }
-  
-      await reserveSeats(showId, selectedSeats, userId);
-      router.push("/checkout");
-    } catch (error) {
-      console.error("Error during checkout:", error);
-      alert("Failed to reserve seats. Please try again.");
-    }
+    // Navigate to the checkout page
+    router.push(`/checkout?${queryParams.toString()}`);
   };
   
   
