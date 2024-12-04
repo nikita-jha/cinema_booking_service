@@ -9,6 +9,7 @@ import { getSavedCardsForUser } from "../../application/firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth"; // Import for auth state monitoring
 import { auth } from "../../application/firebase/config"; // Firebase Auth instance
 import * as crypto from 'crypto';
+import CryptoJS from 'crypto-js';
 
 
 const CheckoutPage = () => {
@@ -75,18 +76,21 @@ const CheckoutPage = () => {
         try {
           setLoadingCards(true);
           const cards = await getSavedCardsForUser(userId);
+          console.log("CARD DATA:", cards);
   
-          // Filter out invalid or incomplete cards
-          const validCards = cards.filter((card) =>
-            card.cardNumber?.trim().length > 0 &&
-            card.cvv?.trim().length > 0 &&
-            card.expirationDate?.trim().length > 0 &&
-            card.billingAddress?.trim().length > 0 &&
-            card.cardType?.trim().length > 0
-          );
+          // Decrypt sensitive fields before displaying
+          const decryptedCards = cards.map(card => ({
+            ...card,
+            cardNumber: decryptData(card.cardNumber),
+            expirationDate: decryptData(card.expirationDate),
+            billingAddress: decryptData(card.billingAddress),
+            // No decrypting CVV (leaving it out for security)
+          }));
+
+          console.log("DECRYPTED CARD DATA:", decryptedCards);
   
-          setSavedCards(validCards);
-          console.log("Fetched valid card data:", validCards);
+          setSavedCards(decryptedCards);
+          console.log("Fetched valid card data:", decryptedCards);
         } catch (error) {
           console.error("Error fetching card data:", error);
         } finally {
@@ -99,7 +103,11 @@ const CheckoutPage = () => {
   }, [userId]); // Run this effect when `userId` changes
   
   
-  
+  const decryptData = (encryptedData: string): string => {
+    const decryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+    const bytes = CryptoJS.AES.decrypt(encryptedData, decryptionKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  };
 
   const handlePromoCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPromoCode(e.target.value);
