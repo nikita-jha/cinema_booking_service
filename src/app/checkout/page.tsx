@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
@@ -8,11 +8,13 @@ import useRequireAuth from '../../components/RequireAuth';
 import { getSavedCardsForUser } from "../../application/firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth"; // Import for auth state monitoring
 import { auth } from "../../application/firebase/config"; // Firebase Auth instance
+import * as crypto from 'crypto';
 
 
 const CheckoutPage = () => {
   useRequireAuth();
   const searchParams = useSearchParams();
+  const router = useRouter(); 
 
   // Retrieve query parameters from the URL
   const title = searchParams.get("title") || "";
@@ -35,9 +37,9 @@ const CheckoutPage = () => {
     billingAddress: "",
   });
 
-  // Mock calculations for the totals (you can replace this with real calculations)
+
   const ticketPrice = 10; // Example: $10 per ticket
-  const initialOrderTotal = numTickets * ticketPrice;
+  const initialOrderTotal = numTickets * ticketPrice; 
   const initialTaxAmount = initialOrderTotal * 0.07; // 7% tax
   const initialOverallTotal = initialOrderTotal + initialTaxAmount;
 
@@ -45,6 +47,11 @@ const CheckoutPage = () => {
   const [taxAmount, setTaxAmount] = useState<number>(initialTaxAmount);
   const [overallTotal, setOverallTotal] = useState<number>(initialOverallTotal);
   const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
+
+  const [errorMessage, setErrorMessage] = useState<string>(""); // Error message state
+
+
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -98,11 +105,25 @@ const CheckoutPage = () => {
     setPromoCode(e.target.value);
   };
 
+  const encryptData = (data: string): string => {
+    const algorithm = "aes-256-cbc";
+    const key = crypto.randomBytes(32); // Replace with a securely stored key
+    const iv = crypto.randomBytes(16);
+    
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    let encrypted = cipher.update(data, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    
+    // Combine IV and encrypted data for sending
+    return `${iv.toString("hex")}:${encrypted}`;
+  };
+  
+
   const handleCreditCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCreditCardInfo((prevInfo) => ({
       ...prevInfo,
-      [name]: value,
+      [name]: sanitizeInput(value),
     }));
   };
 
@@ -137,10 +158,51 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleConfirmPayment = () => {
-    // Handle payment confirmation logic here
-    console.log('Payment confirmed');
+  const validateCreditCardInfo = ({ cardNumber, cvv, expirationDate, billingAddress }: typeof creditCardInfo): boolean => {
+    const cardNumberRegex = /^\d{16}$/; // Ensure 16 digits
+    const cvvRegex = /^\d{3,4}$/; // Ensure 3 or 4 digits
+    const expirationRegex = /^(0[1-9]|1[0-2])\/\d{2}$/; // MM/YY format
+    
+    return (
+      cardNumberRegex.test(cardNumber) &&
+      cvvRegex.test(cvv) &&
+      expirationRegex.test(expirationDate) &&
+      billingAddress.trim().length > 0
+    );
   };
+
+  const handleConfirmPayment = () => {
+    if (!validateCreditCardInfo(creditCardInfo)) {
+      setErrorMessage("Invalid payment information. Please check your details.");
+      return;
+    }
+    setErrorMessage("");
+  
+    const encryptedCardData = {
+      cardNumber: encryptData(creditCardInfo.cardNumber),
+      cvv: encryptData(creditCardInfo.cvv),
+      expirationDate: encryptData(creditCardInfo.expirationDate),
+      billingAddress: encryptData(creditCardInfo.billingAddress),
+    };
+  
+    console.log("Encrypted card data ready for submission:", encryptedCardData);
+    // Submit encrypted data to the server
+
+    const queryParams = new URLSearchParams({
+      title,
+      showDate,
+      showTime,
+      numTickets: numTickets.toString(),
+      selectedSeats: JSON.stringify(selectedSeats),
+    });
+
+    router.push(`/confirmation?${queryParams.toString()}`);
+  };
+
+  const sanitizeInput = (value: string): string => {
+    return value.replace(/[^a-zA-Z0-9 /]/g, ""); // Allow alphanumeric and common characters
+  };
+
 
   return (
     <div>
@@ -222,7 +284,7 @@ const CheckoutPage = () => {
                 CVV
               </label>
               <input
-                type="text"
+                type="password"
                 id="cvv"
                 name="cvv"
                 value={creditCardInfo.cvv}
@@ -255,6 +317,7 @@ const CheckoutPage = () => {
                 placeholder="Enter billing address"
               />
             </div>
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           </div>
         </div>
         <div className="flex justify-between w-full max-w-4xl mx-auto mt-4">
@@ -263,18 +326,11 @@ const CheckoutPage = () => {
               Cancel
             </button>
           </Link>
-          <Link
-            href={{
-              pathname: '/confirmation',
-              query: {
-                title,
-              },
-            }}
-          >
-            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-              Confirm Payment
-            </button>
-          </Link>
+          <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          onClick={handleConfirmPayment}>
+            Confirm Payment
+          </button>
+
         </div>
       </div>
     </div>
