@@ -39,27 +39,39 @@ const CheckoutPage = () => {
   const [overallTotal, setOverallTotal] = useState<number>(initialOverallTotal);
   const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
 
-  // Monitor user authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        console.log("Logged-in user ID:", user.uid);
         setUserId(user.uid); // Set the logged-in user's ID
       } else {
+        console.log("No user logged in");
         setUserId(null); // Clear user ID if not logged in
       }
     });
-
+  
     return () => unsubscribe(); // Cleanup listener on unmount
   }, []);
-
-    // Fetch saved card data when userId is available
+  
   useEffect(() => {
     const fetchCardData = async () => {
       if (userId) {
+        console.log("Fetching card data for user:", userId);
         try {
           setLoadingCards(true);
           const cards = await getSavedCardsForUser(userId);
-          setSavedCards(cards);
+  
+          // Filter out invalid or incomplete cards
+          const validCards = cards.filter((card) =>
+            card.cardNumber?.trim().length > 0 &&
+            card.cvv?.trim().length > 0 &&
+            card.expirationDate?.trim().length > 0 &&
+            card.billingAddress?.trim().length > 0 &&
+            card.cardType?.trim().length > 0
+          );
+  
+          setSavedCards(validCards);
+          console.log("Fetched valid card data:", validCards);
         } catch (error) {
           console.error("Error fetching card data:", error);
         } finally {
@@ -67,28 +79,10 @@ const CheckoutPage = () => {
         }
       }
     };
-
+  
     fetchCardData();
   }, [userId]); // Run this effect when `userId` changes
-
-  // Fetch saved card data when userId is available
-  useEffect(() => {
-    const fetchCardData = async () => {
-      if (userId) {
-        try {
-          setLoadingCards(true);
-          const cards = await getSavedCardsForUser(userId);
-          setSavedCards(cards);
-        } catch (error) {
-          console.error("Error fetching card data:", error);
-        } finally {
-          setLoadingCards(false);
-        }
-      }
-    };
-
-    fetchCardData();
-  }, [userId]); // Run this effect when `userId` changes
+  
   
   
 
@@ -184,6 +178,7 @@ const CheckoutPage = () => {
               <label className="block text-gray-700 text-sm font-bold mb-2">
                 Select Saved Card (Optional)
               </label>
+              
               <select
                 disabled={savedCards.length === 0}
                 onChange={handleUseSavedCardChange}
