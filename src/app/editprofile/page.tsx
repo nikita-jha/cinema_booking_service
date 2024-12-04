@@ -40,11 +40,22 @@ const EditProfilePage = () => {
     };
   }
   
-  const [activeTab, setActiveTab] = useState("personal");
+  interface Order {
+    id: string;
+    date: string;
+    movieTitle: string;
+    showtime: string;
+    seats: string[];
+    totalAmount: number;
+    status: string;
+  }
+
+  const [activeTab, setActiveTab] = useState("profile");
   const [originalUserData, setOriginalUserData] = useState(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const router = useRouter();
   const { setUser } = useUser();
 
@@ -195,6 +206,7 @@ const EditProfilePage = () => {
               userType: data.userType,
               phone: data.phone || ''
             });
+            fetchOrders(firebaseUser.uid);
           } else {
             setError("User data not found");
           }
@@ -234,7 +246,16 @@ const EditProfilePage = () => {
     };
   };
   
-  type TabType = "personal" | "payment" | "address";
+  const fetchOrders = async (userId: string) => {
+    try {
+      const ordersData = await getOrdersByUserId(userId);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+
+  type TabType = "personal" | "payment" | "address" | "orders";
 
   const handleTabClick = (tab: TabType) => {
     setActiveTab(tab);
@@ -533,6 +554,40 @@ const EditProfilePage = () => {
     marginBottom: "10px",
   };
 
+  const OrderHistory = () => {
+    return (
+      <div className="mt-4">
+        <h2 className="text-2xl font-bold mb-4">Order History</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-300">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-6 py-3 border-b text-left">Date</th>
+                <th className="px-6 py-3 border-b text-left">Movie Title</th>
+                <th className="px-6 py-3 border-b text-left">Showtime</th>
+                <th className="px-6 py-3 border-b text-left">Seats</th>
+                <th className="px-6 py-3 border-b text-left">Total Amount</th>
+                <th className="px-6 py-3 border-b text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td className="px-6 py-4 border-b">{order.date}</td>
+                  <td className="px-6 py-4 border-b">{order.movieTitle}</td>
+                  <td className="px-6 py-4 border-b">{order.showtime}</td>
+                  <td className="px-6 py-4 border-b">{order.seats.join(', ')}</td>
+                  <td className="px-6 py-4 border-b">{order.totalAmount}</td>
+                  <td className="px-6 py-4 border-b">{order.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -576,6 +631,16 @@ const EditProfilePage = () => {
                   onClick={() => handleTabClick("address")}
                 >
                   Home Address
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...navButtonStyle(activeTab === "orders"),
+                    width: "100%",
+                  }}
+                  onClick={() => handleTabClick("orders")}
+                >
+                  Order History
                 </button>
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -851,6 +916,8 @@ const EditProfilePage = () => {
                   {validationMessages["address.zip"] && <p className="text-red-500 text-sm mt-1">{validationMessages["address.zip"]}</p>}
                 </div>
               )}
+
+              {activeTab === "orders" && <OrderHistory />}
             </div>
           </div>
         </form>
