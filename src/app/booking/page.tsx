@@ -7,6 +7,7 @@ import { db, auth } from "../../application/firebase/config";
 import { onAuthStateChanged } from "firebase/auth"; // Import this function
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../application/firebase/firestore";
+import Link from "next/link";
 
 const formatTime = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);
@@ -165,12 +166,16 @@ const BookingPage = () => {
   
     // Construct query string for URL
     const queryParams = new URLSearchParams({
-      showId,
-      selectedSeats: JSON.stringify(selectedSeats), // Convert array to string
-      userId: userId || "", // Default to empty string if userId is null
+      title: movieData.title || "", // Movie title
+      showDate: selectedDate || "", // Selected date
+      showTime: selectedShowtime || "", // Selected time
+      numTickets: selectedSeats.length.toString(), // Number of selected tickets
+      showId: showId || "", // Show ID
+      selectedSeats: JSON.stringify(selectedSeats), // Stringify selected seats array
+      userId: userId || "", // User ID
     });
-  
-    // Navigate to the checkout page
+    
+    // Navigate to the checkout page with query parameters
     router.push(`/checkout?${queryParams.toString()}`);
   };
   
@@ -287,17 +292,43 @@ const BookingPage = () => {
         </div>
 
         {/* Checkout Button */}
-        <button
-          onClick={handleCheckout}
-          disabled={!selectedSeats.length || !selectedSeats.every((s) => s.age > 0)}
-          className={`mt-6 px-4 py-2 rounded text-white font-bold ${
-            selectedSeats.length && selectedSeats.every((s) => s.age > 0 && s.age < 120)
-              ? "bg-green-500"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Checkout
-        </button>
+        {
+          movieData && selectedDate && selectedShowtime ? (
+            <Link
+              href={{
+                pathname: "/checkout",
+                query: {
+                  title: movieData.title || "",
+                  showDate: selectedDate || "",
+                  showTime: selectedShowtime || "",
+                  numTickets: selectedSeats.length.toString(),
+                  selectedSeats: JSON.stringify(selectedSeats),
+                  showId: `${movieData.id}-${selectedDate}-${selectedShowtime}` || "",
+                  userId: userId || "",
+                },
+              }}
+            >
+              <button
+                disabled={!selectedSeats.length || !selectedSeats.every((s) => s.age > 0 && s.age < 120)}
+                className={`mt-6 px-4 py-2 rounded text-white font-bold ${
+                  selectedSeats.length && selectedSeats.every((s) => s.age > 0 && s.age < 120)
+                    ? "bg-green-500"
+                    : "bg-gray-400 cursor-not-allowed"
+                }`}
+              >
+                Checkout
+              </button>
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="mt-6 px-4 py-2 rounded text-white font-bold bg-gray-400 cursor-not-allowed"
+            >
+              Checkout
+            </button>
+          )
+        }
+
       </div>
     </div>
   );

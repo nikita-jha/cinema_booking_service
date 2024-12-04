@@ -13,27 +13,34 @@ import { auth } from "../../application/firebase/config"; // Firebase Auth insta
 const CheckoutPage = () => {
   useRequireAuth();
   const searchParams = useSearchParams();
-  const [userId, setUserId] = useState<string | null>(null); // Store user ID
-  const [savedCards, setSavedCards] = useState<any[]>([]); // This will store the `cardData` array
-  const [loadingCards, setLoadingCards] = useState<boolean>(true); // Track loading state
-  const numTickets = searchParams.get('numTickets');
-  const ages = searchParams.get('ages');
-  const showTime = searchParams.get('showTime');
-  const showDate = searchParams.get('showDate');
-  const trailerPictureUrl = searchParams.get('trailerPictureUrl');
-  const title = searchParams.get('title');
-  const initialOrderTotal = parseFloat(searchParams.get('orderTotal') || '0');
-  const initialTaxAmount = parseFloat(searchParams.get('taxAmount') || '0');
-  const initialOverallTotal = parseFloat(searchParams.get('overallTotal') || '0');
 
-  const [promoCode, setPromoCode] = useState<string>('');
+  // Retrieve query parameters from the URL
+  const title = searchParams.get("title") || "";
+  const showDate = searchParams.get("showDate") || "";
+  const showTime = searchParams.get("showTime") || "";
+  const numTickets = parseInt(searchParams.get("numTickets") || "0", 10);
+  const selectedSeats = JSON.parse(searchParams.get("selectedSeats") || "[]");
+  const showId = searchParams.get("showId") || "";
+
+  const [userId, setUserId] = useState<string | null>(null); // Store user ID
+  const [savedCards, setSavedCards] = useState<any[]>([]);
+  const [loadingCards, setLoadingCards] = useState<boolean>(true);
+
+  const [promoCode, setPromoCode] = useState<string>("");
   const [useSavedCard, setUseSavedCard] = useState<boolean>(false);
   const [creditCardInfo, setCreditCardInfo] = useState({
-    cardNumber: '',
-    cvv: '',
-    expirationDate: '',
-    billingAddress: '', // Changed "Name on Card" to "Billing Address"
+    cardNumber: "",
+    cvv: "",
+    expirationDate: "",
+    billingAddress: "",
   });
+
+  // Mock calculations for the totals (you can replace this with real calculations)
+  const ticketPrice = 10; // Example: $10 per ticket
+  const initialOrderTotal = numTickets * ticketPrice;
+  const initialTaxAmount = initialOrderTotal * 0.07; // 7% tax
+  const initialOverallTotal = initialOrderTotal + initialTaxAmount;
+
   const [orderTotal, setOrderTotal] = useState<number>(initialOrderTotal);
   const [taxAmount, setTaxAmount] = useState<number>(initialTaxAmount);
   const [overallTotal, setOverallTotal] = useState<number>(initialOverallTotal);
@@ -43,6 +50,7 @@ const CheckoutPage = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log("Logged-in user ID:", user.uid);
+        console.log("TITLE:", title);
         setUserId(user.uid); // Set the logged-in user's ID
       } else {
         console.log("No user logged in");
@@ -146,6 +154,9 @@ const CheckoutPage = () => {
             <p className="mb-2">Show Date: {showDate}</p>
             <p className="mb-2">Show Time: {showTime}</p>
             <p className="mb-2">Number of Tickets: {numTickets}</p>
+            <p className="mb-2">
+              Selected Seats: {selectedSeats.map((seat) => seat.seat).join(", ")}
+            </p>            
             <div className="mb-4 flex items-center">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="promoCode">
                 Promotion Code (Optional)
