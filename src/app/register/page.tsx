@@ -198,7 +198,7 @@ const router = useRouter(); // Initialize the router
         cardType: card.cardType,
         cardNumber: card.cardNumber ? CryptoJS.AES.encrypt(card.cardNumber, encryptionKey).toString() : '',
         expirationDate: card.expirationDate ? CryptoJS.AES.encrypt(card.expirationDate, encryptionKey).toString() : '',
-        cvv: card.cvv,
+        cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : '',
         billingAddress: card.billingAddress ? CryptoJS.AES.encrypt(card.billingAddress, encryptionKey).toString() : ''
       }));
 

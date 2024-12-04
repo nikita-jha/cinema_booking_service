@@ -32,10 +32,12 @@ const CheckoutPage = () => {
   const [promoCode, setPromoCode] = useState<string>("");
   const [useSavedCard, setUseSavedCard] = useState<boolean>(false);
   const [creditCardInfo, setCreditCardInfo] = useState({
+    cardType: "",
     cardNumber: "",
     cvv: "",
     expirationDate: "",
     billingAddress: "",
+  
   });
 
 
@@ -84,8 +86,9 @@ const CheckoutPage = () => {
             cardNumber: decryptData(card.cardNumber),
             expirationDate: decryptData(card.expirationDate),
             billingAddress: decryptData(card.billingAddress),
+            cvv: decryptData(card.cvv),
             // No decrypting CVV (leaving it out for security)
-          }));
+          })).filter(card => card.cardNumber && card.cardNumber.length >= 4);
 
           console.log("DECRYPTED CARD DATA:", decryptedCards);
   
@@ -112,19 +115,6 @@ const CheckoutPage = () => {
   const handlePromoCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPromoCode(e.target.value);
   };
-
-  const encryptData = (data: string): string => {
-    const algorithm = "aes-256-cbc";
-    const key = crypto.randomBytes(32); // Replace with a securely stored key
-    const iv = crypto.randomBytes(16);
-    
-    const cipher = crypto.createCipheriv(algorithm, key, iv);
-    let encrypted = cipher.update(data, "utf8", "hex");
-    encrypted += cipher.final("hex");
-    
-    // Combine IV and encrypted data for sending
-    return `${iv.toString("hex")}:${encrypted}`;
-  };
   
 
   const handleCreditCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,16 +127,27 @@ const CheckoutPage = () => {
 
   const handleUseSavedCardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCardIndex = e.target.value; // Index of the selected card
-    if (savedCards[selectedCardIndex]) {
+    if (selectedCardIndex === "") {
+      // Reset all fields to blank if "Select a card" is chosen
+      setCreditCardInfo({
+        cardType: "",
+        cardNumber: "",
+        cvv: "",
+        expirationDate: "",
+        billingAddress: "",
+      });
+      setUseSavedCard(false); // Reset the saved card usage flag
+    } else if (savedCards[selectedCardIndex]) {
       const selectedCard = savedCards[selectedCardIndex];
       setCreditCardInfo({
+        cardType: selectedCard.cardType,
         cardNumber: selectedCard.cardNumber,
         cvv: selectedCard.cvv,
         expirationDate: selectedCard.expirationDate,
         billingAddress: selectedCard.billingAddress,
       });
+      setUseSavedCard(true);
     }
-    setUseSavedCard(true);
   };
 
   const handleApplyPromoCode = () => {
@@ -181,21 +182,11 @@ const CheckoutPage = () => {
 
   const handleConfirmPayment = () => {
     if (!validateCreditCardInfo(creditCardInfo)) {
-      setErrorMessage("Invalid payment information. Please check your details.");
+      setErrorMessage("Invalid payment information. Please check your details and try again.");
       return;
     }
     setErrorMessage("");
   
-    const encryptedCardData = {
-      cardNumber: encryptData(creditCardInfo.cardNumber),
-      cvv: encryptData(creditCardInfo.cvv),
-      expirationDate: encryptData(creditCardInfo.expirationDate),
-      billingAddress: encryptData(creditCardInfo.billingAddress),
-    };
-  
-    console.log("Encrypted card data ready for submission:", encryptedCardData);
-    // Submit encrypted data to the server
-
     const queryParams = new URLSearchParams({
       title,
       showDate,
@@ -261,6 +252,7 @@ const CheckoutPage = () => {
               </label>
               
               <select
+                value={useSavedCard ? savedCards.findIndex(card => card.cardNumber === creditCardInfo.cardNumber) : ""}
                 disabled={savedCards.length === 0}
                 onChange={handleUseSavedCardChange}
                 className="shadow border rounded w-full py-2 px-3 text-gray-700"
@@ -275,6 +267,25 @@ const CheckoutPage = () => {
               {loadingCards && <p>Loading saved cards...</p>}
               {!loadingCards && savedCards.length === 0 && <p>No saved cards found.</p>}
             </div>
+
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="cardType">
+                  Card Type
+                </label>
+              <select
+                id="cardType"
+                name="cardType"
+                value={creditCardInfo.cardType}
+                onChange={(e) => handleCreditCardChange(e)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              >
+                <option value="">-- Select Card Type --</option>
+                <option value="Visa">Visa</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="Amex">American Express</option>
+              </select>
+              </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="cardNumber">
                 Card Number
@@ -284,7 +295,29 @@ const CheckoutPage = () => {
                 id="cardNumber"
                 name="cardNumber"
                 value={creditCardInfo.cardNumber}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+              
+                  // Get the selected card type
+                  const cardType = creditCardInfo.cardType;
+              
+                  // Validate card number based on card type
+                  if (cardType === "Visa" || cardType === "Mastercard") {
+                    if (!/^\d{16}$/.test(e.target.value)) {
+                      setErrorMessage("Card number should have 16 digits for Visa or Mastercard.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else if (cardType === "Amex") {
+                    if (!/^\d{15}$/.test(e.target.value)) {
+                      setErrorMessage("Card number should have 15 digits for Amex.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else {
+                    setErrorMessage("Please select a valid card type before entering the card number.");
+                  }
+                }}              
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter card number"
               />
@@ -296,7 +329,28 @@ const CheckoutPage = () => {
                 id="cvv"
                 name="cvv"
                 value={creditCardInfo.cvv}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+            
+                  const cardType = creditCardInfo.cardType;
+            
+                  // Validate CVV based on card type
+                  if (cardType === "Visa" || cardType === "Mastercard") {
+                    if (!/^\d{3}$/.test(e.target.value)) {
+                      setErrorMessage("CVV must be 3 digits for Visa/Mastercard.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else if (cardType === "Amex") {
+                    if (!/^\d{4}$/.test(e.target.value)) {
+                      setErrorMessage("CVV must be 4 digits for Amex.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else {
+                    setErrorMessage("Please select a valid card type before entering CVV.");
+                  }
+                }}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter CVV"
               />
@@ -308,7 +362,23 @@ const CheckoutPage = () => {
                 id="expirationDate"
                 name="expirationDate"
                 value={creditCardInfo.expirationDate}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+            
+                  const expirationRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+                  if (!expirationRegex.test(e.target.value)) {
+                    setErrorMessage("Expiration date must be in MM/YY format.");
+                  } else {
+                    const [month, year] = e.target.value.split("/").map(Number);
+                    const currentDate = new Date();
+                    const expirationDate = new Date(`20${year}`, month - 1);
+                    if (expirationDate <= currentDate) {
+                      setErrorMessage("Expiration date must be in the future.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  }
+                }}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter expiration date"
               />
@@ -320,7 +390,16 @@ const CheckoutPage = () => {
                 id="billingAddress"
                 name="billingAddress"
                 value={creditCardInfo.billingAddress}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+            
+                  if (e.target.value.trim().length === 0) {
+                    setErrorMessage("Billing address cannot be empty.");
+                  } else {
+                    setErrorMessage(""); // Clear error message
+                  }
+                }}
+            
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter billing address"
               />
