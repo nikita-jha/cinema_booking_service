@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
@@ -8,11 +8,14 @@ import useRequireAuth from '../../components/RequireAuth';
 import { getSavedCardsForUser } from "../../application/firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth"; // Import for auth state monitoring
 import { auth } from "../../application/firebase/config"; // Firebase Auth instance
+import * as crypto from 'crypto';
+import CryptoJS from 'crypto-js';
 
 
 const CheckoutPage = () => {
   useRequireAuth();
   const searchParams = useSearchParams();
+  const router = useRouter(); 
 
   // Retrieve query parameters from the URL
   const title = searchParams.get("title") || "";
@@ -29,15 +32,17 @@ const CheckoutPage = () => {
   const [promoCode, setPromoCode] = useState<string>("");
   const [useSavedCard, setUseSavedCard] = useState<boolean>(false);
   const [creditCardInfo, setCreditCardInfo] = useState({
+    cardType: "",
     cardNumber: "",
     cvv: "",
     expirationDate: "",
     billingAddress: "",
+  
   });
 
-  // Mock calculations for the totals (you can replace this with real calculations)
+
   const ticketPrice = 10; // Example: $10 per ticket
-  const initialOrderTotal = numTickets * ticketPrice;
+  const initialOrderTotal = numTickets * ticketPrice; 
   const initialTaxAmount = initialOrderTotal * 0.07; // 7% tax
   const initialOverallTotal = initialOrderTotal + initialTaxAmount;
 
@@ -45,6 +50,11 @@ const CheckoutPage = () => {
   const [taxAmount, setTaxAmount] = useState<number>(initialTaxAmount);
   const [overallTotal, setOverallTotal] = useState<number>(initialOverallTotal);
   const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
+
+  const [errorMessage, setErrorMessage] = useState<string>(""); // Error message state
+
+
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -68,18 +78,22 @@ const CheckoutPage = () => {
         try {
           setLoadingCards(true);
           const cards = await getSavedCardsForUser(userId);
+          console.log("CARD DATA:", cards);
   
-          // Filter out invalid or incomplete cards
-          const validCards = cards.filter((card) =>
-            card.cardNumber?.trim().length > 0 &&
-            card.cvv?.trim().length > 0 &&
-            card.expirationDate?.trim().length > 0 &&
-            card.billingAddress?.trim().length > 0 &&
-            card.cardType?.trim().length > 0
-          );
+          // Decrypt sensitive fields before displaying
+          const decryptedCards = cards.map(card => ({
+            ...card,
+            cardNumber: decryptData(card.cardNumber),
+            expirationDate: decryptData(card.expirationDate),
+            billingAddress: decryptData(card.billingAddress),
+            cvv: decryptData(card.cvv),
+            // No decrypting CVV (leaving it out for security)
+          })).filter(card => card.cardNumber && card.cardNumber.length >= 4);
+
+          console.log("DECRYPTED CARD DATA:", decryptedCards);
   
-          setSavedCards(validCards);
-          console.log("Fetched valid card data:", validCards);
+          setSavedCards(decryptedCards);
+          console.log("Fetched valid card data:", decryptedCards);
         } catch (error) {
           console.error("Error fetching card data:", error);
         } finally {
@@ -92,32 +106,48 @@ const CheckoutPage = () => {
   }, [userId]); // Run this effect when `userId` changes
   
   
-  
+  const decryptData = (encryptedData: string): string => {
+    const decryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+    const bytes = CryptoJS.AES.decrypt(encryptedData, decryptionKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  };
 
   const handlePromoCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPromoCode(e.target.value);
   };
+  
 
   const handleCreditCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCreditCardInfo((prevInfo) => ({
       ...prevInfo,
-      [name]: value,
+      [name]: sanitizeInput(value),
     }));
   };
 
   const handleUseSavedCardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCardIndex = e.target.value; // Index of the selected card
-    if (savedCards[selectedCardIndex]) {
+    if (selectedCardIndex === "") {
+      // Reset all fields to blank if "Select a card" is chosen
+      setCreditCardInfo({
+        cardType: "",
+        cardNumber: "",
+        cvv: "",
+        expirationDate: "",
+        billingAddress: "",
+      });
+      setUseSavedCard(false); // Reset the saved card usage flag
+    } else if (savedCards[selectedCardIndex]) {
       const selectedCard = savedCards[selectedCardIndex];
       setCreditCardInfo({
+        cardType: selectedCard.cardType,
         cardNumber: selectedCard.cardNumber,
         cvv: selectedCard.cvv,
         expirationDate: selectedCard.expirationDate,
         billingAddress: selectedCard.billingAddress,
       });
+      setUseSavedCard(true);
     }
-    setUseSavedCard(true);
   };
 
   const handleApplyPromoCode = () => {
@@ -137,10 +167,41 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleConfirmPayment = () => {
-    // Handle payment confirmation logic here
-    console.log('Payment confirmed');
+  const validateCreditCardInfo = ({ cardNumber, cvv, expirationDate, billingAddress }: typeof creditCardInfo): boolean => {
+    const cardNumberRegex = /^\d{16}$/; // Ensure 16 digits
+    const cvvRegex = /^\d{3,4}$/; // Ensure 3 or 4 digits
+    const expirationRegex = /^(0[1-9]|1[0-2])\/\d{2}$/; // MM/YY format
+    
+    return (
+      cardNumberRegex.test(cardNumber) &&
+      cvvRegex.test(cvv) &&
+      expirationRegex.test(expirationDate) &&
+      billingAddress.trim().length > 0
+    );
   };
+
+  const handleConfirmPayment = () => {
+    if (!validateCreditCardInfo(creditCardInfo)) {
+      setErrorMessage("Invalid payment information. Please check your details and try again.");
+      return;
+    }
+    setErrorMessage("");
+  
+    const queryParams = new URLSearchParams({
+      title,
+      showDate,
+      showTime,
+      numTickets: numTickets.toString(),
+      selectedSeats: JSON.stringify(selectedSeats),
+    });
+
+    router.push(`/confirmation?${queryParams.toString()}`);
+  };
+
+  const sanitizeInput = (value: string): string => {
+    return value.replace(/[^a-zA-Z0-9 /]/g, ""); // Allow alphanumeric and common characters
+  };
+
 
   return (
     <div>
@@ -191,6 +252,7 @@ const CheckoutPage = () => {
               </label>
               
               <select
+                value={useSavedCard ? savedCards.findIndex(card => card.cardNumber === creditCardInfo.cardNumber) : ""}
                 disabled={savedCards.length === 0}
                 onChange={handleUseSavedCardChange}
                 className="shadow border rounded w-full py-2 px-3 text-gray-700"
@@ -205,6 +267,25 @@ const CheckoutPage = () => {
               {loadingCards && <p>Loading saved cards...</p>}
               {!loadingCards && savedCards.length === 0 && <p>No saved cards found.</p>}
             </div>
+
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="cardType">
+                  Card Type
+                </label>
+              <select
+                id="cardType"
+                name="cardType"
+                value={creditCardInfo.cardType}
+                onChange={(e) => handleCreditCardChange(e)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              >
+                <option value="">-- Select Card Type --</option>
+                <option value="Visa">Visa</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="Amex">American Express</option>
+              </select>
+              </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="cardNumber">
                 Card Number
@@ -214,7 +295,29 @@ const CheckoutPage = () => {
                 id="cardNumber"
                 name="cardNumber"
                 value={creditCardInfo.cardNumber}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+              
+                  // Get the selected card type
+                  const cardType = creditCardInfo.cardType;
+              
+                  // Validate card number based on card type
+                  if (cardType === "Visa" || cardType === "Mastercard") {
+                    if (!/^\d{16}$/.test(e.target.value)) {
+                      setErrorMessage("Card number should have 16 digits for Visa or Mastercard.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else if (cardType === "Amex") {
+                    if (!/^\d{15}$/.test(e.target.value)) {
+                      setErrorMessage("Card number should have 15 digits for Amex.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else {
+                    setErrorMessage("Please select a valid card type before entering the card number.");
+                  }
+                }}              
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter card number"
               />
@@ -222,11 +325,32 @@ const CheckoutPage = () => {
                 CVV
               </label>
               <input
-                type="text"
+                type="password"
                 id="cvv"
                 name="cvv"
                 value={creditCardInfo.cvv}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+            
+                  const cardType = creditCardInfo.cardType;
+            
+                  // Validate CVV based on card type
+                  if (cardType === "Visa" || cardType === "Mastercard") {
+                    if (!/^\d{3}$/.test(e.target.value)) {
+                      setErrorMessage("CVV must be 3 digits for Visa/Mastercard.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else if (cardType === "Amex") {
+                    if (!/^\d{4}$/.test(e.target.value)) {
+                      setErrorMessage("CVV must be 4 digits for Amex.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  } else {
+                    setErrorMessage("Please select a valid card type before entering CVV.");
+                  }
+                }}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter CVV"
               />
@@ -238,7 +362,23 @@ const CheckoutPage = () => {
                 id="expirationDate"
                 name="expirationDate"
                 value={creditCardInfo.expirationDate}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+            
+                  const expirationRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+                  if (!expirationRegex.test(e.target.value)) {
+                    setErrorMessage("Expiration date must be in MM/YY format.");
+                  } else {
+                    const [month, year] = e.target.value.split("/").map(Number);
+                    const currentDate = new Date();
+                    const expirationDate = new Date(`20${year}`, month - 1);
+                    if (expirationDate <= currentDate) {
+                      setErrorMessage("Expiration date must be in the future.");
+                    } else {
+                      setErrorMessage(""); // Clear error message
+                    }
+                  }
+                }}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter expiration date"
               />
@@ -250,11 +390,21 @@ const CheckoutPage = () => {
                 id="billingAddress"
                 name="billingAddress"
                 value={creditCardInfo.billingAddress}
-                onChange={handleCreditCardChange}
+                onChange={(e) => {
+                  handleCreditCardChange(e);
+            
+                  if (e.target.value.trim().length === 0) {
+                    setErrorMessage("Billing address cannot be empty.");
+                  } else {
+                    setErrorMessage(""); // Clear error message
+                  }
+                }}
+            
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="Enter billing address"
               />
             </div>
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           </div>
         </div>
         <div className="flex justify-between w-full max-w-4xl mx-auto mt-4">
@@ -263,18 +413,11 @@ const CheckoutPage = () => {
               Cancel
             </button>
           </Link>
-          <Link
-            href={{
-              pathname: '/confirmation',
-              query: {
-                title,
-              },
-            }}
-          >
-            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-              Confirm Payment
-            </button>
-          </Link>
+          <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          onClick={handleConfirmPayment}>
+            Confirm Payment
+          </button>
+
         </div>
       </div>
     </div>
