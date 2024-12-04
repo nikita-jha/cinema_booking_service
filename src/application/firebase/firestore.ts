@@ -424,3 +424,21 @@ export const sendPromotionEmails = async (promotionData: any) => {
     throw error;
   }
 };
+
+export const getSavedCardsForUser = async (userId: string) => {
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return userData.cardData || []; // Return the cardData array or an empty array if not found
+    } else {
+      console.error("User document does not exist");
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching saved cards:", error);
+    throw error;
+  }
+};
