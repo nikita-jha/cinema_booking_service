@@ -52,6 +52,7 @@ const CheckoutPage = () => {
   const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
 
   const [errorMessage, setErrorMessage] = useState<string>(""); // Error message state
+  const [isPaymentEnabled, setIsPaymentEnabled] = useState(false);
 
 
   
@@ -70,7 +71,11 @@ const CheckoutPage = () => {
   
     return () => unsubscribe(); // Cleanup listener on unmount
   }, []);
-  
+
+  useEffect(() => {
+    setIsPaymentEnabled(isPaymentInfoComplete());
+  }, [useSavedCard, creditCardInfo, savedCards]);
+
   useEffect(() => {
     const fetchCardData = async () => {
       if (userId) {
@@ -179,13 +184,34 @@ const CheckoutPage = () => {
       billingAddress.trim().length > 0
     );
   };
+  const isPaymentInfoComplete = () => {
+    if (useSavedCard) {
+      const cardSelected = savedCards.findIndex(
+        (card) => card.cardNumber === creditCardInfo.cardNumber
+      ) !== -1;
+      console.log("Saved card selected:", cardSelected);
+      return cardSelected; // Ensure a saved card is selected
+    }
+  
+    // Validate individual fields for manual entry
+    const isValid = validateCreditCardInfo(creditCardInfo);
+    console.log("Manual card info valid:", isValid);
+    return isValid;
+  };
+
 
   const handleConfirmPayment = async () => {
+    if (!isPaymentInfoComplete()) {
+      setErrorMessage("Please select a saved card or fill out all payment details.");
+      return;
+    }
+  
+    setErrorMessage("");
+
     if (!validateCreditCardInfo(creditCardInfo)) {
       setErrorMessage("Invalid payment information. Please check your details and try again.");
       return;
     }
-    setErrorMessage("");
 
     // Call reserveSeats method
     if (!userId) throw new Error("User must be logged in to reserve seats.");
@@ -421,11 +447,15 @@ const CheckoutPage = () => {
             </button>
           </Link>
           <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          onClick={handleConfirmPayment}>
+          disabled={!isPaymentEnabled}
+          onClick={handleConfirmPayment}
+          >
+          
             Confirm Payment
           </button>
 
         </div>
+        
       </div>
     </div>
   );
