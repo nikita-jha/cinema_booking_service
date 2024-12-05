@@ -9,11 +9,15 @@ import ScheduleMovie from "../../../components/ScheduleMovie";
 import { IMovie } from "../../../domain/movie.model";
 import { deleteMovie, getMovies } from "../../../application/firebase/firestore"; 
 import useRequireAuth from '../../../components/RequireAuth';
+import AddTicketPrice from "../../../components/AddTicketPrice";
 
 const AdminPortalHomePage = () => {
   useRequireAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState<IMovie[]>([]);
+  const [isTicketPriceFormOpen, setIsTicketPriceFormOpen] = useState(false);
+  const [selectedMovieId, setSelectedMovieId] = useState<string | null>(null);
+ 
 
   const fetchMovies = async () => {
     setIsLoading(true);
@@ -25,6 +29,17 @@ const AdminPortalHomePage = () => {
     }
     setIsLoading(false);
   };
+
+  const handleOpenTicketPriceForm = (movieId: string) => { 
+    setSelectedMovieId(movieId);
+    setIsTicketPriceFormOpen(true);
+  };
+
+  const handleCloseTicketPriceForm = () => { 
+    setSelectedMovieId(null);
+    setIsTicketPriceFormOpen(false); // Close the form
+  };
+
 
   const deleteCallback = async (id: string) => {
     console.log(
@@ -96,16 +111,20 @@ const AdminPortalHomePage = () => {
                   <td className="py-2 px-4 border-b text-gray-800">
                     <div className="flex space-x-2">
                       <EditMovie movie={movie} onMovieUpdated={fetchMovies} />
-                      <ScheduleMovie
-                        movie={movie}
-                        onScheduleAdded={fetchMovies}
-                      />
+                      <ScheduleMovie movie={movie} onScheduleAdded={fetchMovies} />                        
+                      <div className="mb-8 flex justify-center">
+                      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        onClick={() => handleOpenTicketPriceForm(movie.id)}>
+                        Tickets
+                        </button>
+                        </div>
+                        <div className="mb-8 flex justify-center">
                       <button
                         className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                        onClick={() => deleteCallback(movie.id)}
-                      >
+                        onClick={() => deleteCallback(movie.id)}>
                         Delete
                       </button>
+                      </div>
                       <button className="text-red-500 hover:text-red-700">
                         <i className="fas fa-trash-alt"></i>
                       </button>
@@ -115,6 +134,12 @@ const AdminPortalHomePage = () => {
               ))}
             </tbody>
           </table>
+          {isTicketPriceFormOpen && (
+            <AddTicketPrice
+              movieId={selectedMovieId}
+              onTicketPriceAdded={handleCloseTicketPriceForm}
+            />
+          )}
           <div className="mt-4">
             <AddMovie onMovieAdded={fetchMovies} />
           </div>
