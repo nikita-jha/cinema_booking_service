@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import useRequireAuth from '../../components/RequireAuth';
-import { getSavedCardsForUser } from "../../application/firebase/firestore";
+import { getSavedCardsForUser, reserveSeats } from "../../application/firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth"; // Import for auth state monitoring
 import { auth } from "../../application/firebase/config"; // Firebase Auth instance
 import * as crypto from 'crypto';
@@ -180,12 +180,19 @@ const CheckoutPage = () => {
     );
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     if (!validateCreditCardInfo(creditCardInfo)) {
       setErrorMessage("Invalid payment information. Please check your details and try again.");
       return;
     }
     setErrorMessage("");
+
+    // Call reserveSeats method
+    if (!userId) throw new Error("User must be logged in to reserve seats.");
+    await reserveSeats(showId, selectedSeats, userId);
+
+    console.log("Seats reserved successfully!");
+    
   
     const queryParams = new URLSearchParams({
       title,
