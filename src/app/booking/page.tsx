@@ -28,6 +28,8 @@ const BookingPage = () => {
   const [roomId, setRoomId] = useState<string | null>(null); // Add state for room ID
   const [loading, setLoading] = useState(true); // Add loading state
   const [sessionState, setSessionState] = useState(null); // Add session state
+  const [ticketPrices, setTicketPrices] = useState<{ adult: number; child: number; senior: number } | null>(null);
+
 
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
@@ -35,7 +37,7 @@ const BookingPage = () => {
 
   const currentDate = new Date();
   const currentDateString = currentDate.toISOString().split("T")[0]; // Format as yyyy-mm-dd
-
+  
   useEffect(() => {
     // Monitor the logged-in user
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -61,6 +63,20 @@ const BookingPage = () => {
           if (!querySnapshot.empty) {
             const movieDoc = querySnapshot.docs[0];
             setMovieData({ id: movieDoc.id, ...movieDoc.data() });
+            //if (movieDoc.data().ticketPrices) {
+
+            const ticketPrices = movieDoc.data().ticketPrices || {
+              adult: 0,
+              child: 0,
+              senior: 0,
+            };  
+
+              //const ticketPrices = movieDoc.data().ticketPrices;
+              setTicketPrices({
+                adult: Number(ticketPrices.adult),
+                child: Number(ticketPrices.child),
+                senior: Number(ticketPrices.senior),
+              });
           } else {
             setError("Movie not found");
           }
@@ -75,6 +91,7 @@ const BookingPage = () => {
 
     fetchMovieData();
   }, [title]);
+
 
   useEffect(() => {
     if (selectedShowtime) {
@@ -101,6 +118,11 @@ const BookingPage = () => {
     setLoading(false); // Restoration is complete
 
   }, []);
+
+  console.log("Selected Seats: ", selectedSeats);
+  console.log("Age: ", selectedSeats.map((s) => s.age));
+  console.log("Ticket Prices :", ticketPrices);
+
 
   const clearSavedState = () => {
     sessionStorage.removeItem("bookingState");
@@ -331,6 +353,7 @@ const BookingPage = () => {
                 selectedSeats: JSON.stringify(selectedSeats),
                 showId: `${movieData.id}-${selectedDate}-${selectedShowtime}` || "",
                 userId: userId || "",
+                ticketPrices: JSON.stringify(ticketPrices),
               },
             }}
             onClick={saveStateToSession}
