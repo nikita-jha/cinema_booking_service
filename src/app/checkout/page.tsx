@@ -10,7 +10,8 @@ import { onAuthStateChanged } from "firebase/auth"; // Import for auth state mon
 import { auth } from "../../application/firebase/config"; // Firebase Auth instance
 import * as crypto from 'crypto';
 import CryptoJS from 'crypto-js';
-
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../application/firebase/config";
 
 const CheckoutPage = () => {
   useRequireAuth();
@@ -24,6 +25,7 @@ const CheckoutPage = () => {
   const numTickets = parseInt(searchParams.get("numTickets") || "0", 10);
   const selectedSeats = JSON.parse(searchParams.get("selectedSeats") || "[]");
   const showId = searchParams.get("showId") || "";
+  const ticketPrice = JSON.parse(searchParams.get("ticketPrices") || "[]");
 
   const [userId, setUserId] = useState<string | null>(null); // Store user ID
   const [savedCards, setSavedCards] = useState<any[]>([]);
@@ -40,9 +42,40 @@ const CheckoutPage = () => {
   
   });
 
+  console.log("Age: ", selectedSeats.map((s) => s.age));
+  console.log("Checkout Ticket Price", ticketPrice);
 
-  const ticketPrice = 10; // Example: $10 per ticket
-  const initialOrderTotal = numTickets * ticketPrice; 
+
+  //const ticketPrice = 10; // Example: $10 per ticket
+
+  const getAgeCategory = (age: number): string => {
+    if (age < 13) {
+      return "child"
+    } else if (age >= 60) {
+      return "senior"
+    } else {
+      return "adult";
+    }
+  };
+
+  const calculateTotalPrice = () => {
+    let total = 0;
+    
+    // Loop through the selected seats and calculate the total price
+    selectedSeats.forEach((seat) => {
+      const ageCategory = getAgeCategory(seat.age); // Determine the age category (child, adult, senior)
+      const price = ticketPrice[ageCategory.toLowerCase()];  // Get the price based on the age category
+      total += price; // Add the price for this seat to the total
+    });
+  
+    return total;
+  };
+  
+  // Now, use this function to set the total order price
+   const initialOrderTotal = calculateTotalPrice();
+  
+
+  //const initialOrderTotal = numTickets * ticketPrice; 
   const initialTaxAmount = initialOrderTotal * 0.07; // 7% tax
   const initialOverallTotal = initialOrderTotal + initialTaxAmount;
 
@@ -54,8 +87,7 @@ const CheckoutPage = () => {
   const [errorMessage, setErrorMessage] = useState<string>(""); // Error message state
   const [isPaymentEnabled, setIsPaymentEnabled] = useState(false);
 
-
-  
+  console.log("price", ticketPrice.senior);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -235,7 +267,6 @@ const CheckoutPage = () => {
     return value.replace(/[^a-zA-Z0-9 /]/g, ""); // Allow alphanumeric and common characters
   };
 
-
   return (
     <div>
       <Navbar />
@@ -248,9 +279,18 @@ const CheckoutPage = () => {
             <p className="mb-2">Show Date: {showDate}</p>
             <p className="mb-2">Show Time: {showTime}</p>
             <p className="mb-2">Number of Tickets: {numTickets}</p>
-            <p className="mb-2">
-              Selected Seats: {selectedSeats.map((seat) => seat.seat).join(", ")}
-            </p>            
+            <div className="mb-2">
+            {selectedSeats.map((seat, index) => {
+              const ageCategory = getAgeCategory(seat.age);
+              const price = ticketPrice[ageCategory.toLowerCase()];
+              console.log("Price: ", price);
+              return (
+                <p key={index}>
+                  Ticket {index + 1} ({ageCategory.charAt(0).toUpperCase() + ageCategory.slice(1)}): $ {price.toFixed(2)}
+                </p>
+              );
+            })}
+            </div>
             <div className="mb-4 flex items-center">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="promoCode">
                 Promotion Code (Optional)
@@ -442,7 +482,8 @@ const CheckoutPage = () => {
         </div>
         <div className="flex justify-between w-full max-w-4xl mx-auto mt-4">
           <Link href="/">
-            <button className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+            <button 
+            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">            
               Cancel
             </button>
           </Link>
