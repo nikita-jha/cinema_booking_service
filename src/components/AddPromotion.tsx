@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addPromotion, sendPromotionEmails } from "../application/firebase/firestore";
+import { addPromotion } from "../application/firebase/firestore";
 
 interface AddPromotionProps {
   onPromotionAdded: () => void; // Callback to notify when a promotion is added
@@ -14,7 +14,13 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
     value: "",
     startDate: "",
     endDate: "",
+    emailSent: false
   });
+
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,24 +29,35 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
 
   const handleAddPromotion = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      await addPromotion(promotionData); // Add the promotion to Firestore
-      console.log("Promotion successfully added!");
-      onPromotionAdded(); // Notify parent to re-fetch promotions
-      setIsFormOpen(false); // Close the form after adding
+      const newPromotion = {
+        ...promotionData,
+        emailSent: sendEmail
+      };
+
+      await addPromotion(newPromotion);
+      onPromotionAdded(); // Refresh promotions list
+      setIsFormOpen(false);
       setPromotionData({
         discountCode: "",
         value: "",
         startDate: "",
         endDate: "",
-      }); // Reset the form fields
-
-      // Send emails to subscribers
-      await sendPromotionEmails(promotionData);
-      console.log("Promotion emails sent successfully!");
-    } catch (error) {
-      console.error("Error adding promotion or sending emails:", error);
+        emailSent: false
+      });
+    } catch (err) {
+      setError("Failed to add promotion. Please try again.");
+      console.error("Error adding promotion:", err);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSendEmail(e.target.checked);
   };
 
   return (
@@ -112,12 +129,27 @@ const AddPromotion: React.FC<AddPromotionProps> = ({ onPromotionAdded }) => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded"
+                  disabled={isSubmitting}
+                  className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded
+                    ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Add Promotion
+                  {isSubmitting ? 'Adding...' : 'Add Promotion'}
                 </button>
               </div>
             </form>
+            <div className="mt-4 flex items-center">
+              <input
+                type="checkbox"
+                id="sendEmail"
+                checked={sendEmail}
+                onChange={handleCheckboxChange}
+                className="h-4 w-4 text-blue-600"
+              />
+              <label htmlFor="sendEmail" className="ml-2 text-gray-700">
+                Send email to subscribers
+              </label>
+            </div>
+            {error && <div className="text-red-500 mt-2">{error}</div>}
           </div>
         </div>
       )}
