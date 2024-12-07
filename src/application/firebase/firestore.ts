@@ -198,9 +198,15 @@ export const deletePromotion = async (id: string) => {
   }
 };
 
-export const addPromotion = async (promotion: any) => {
+export const addPromotion = async (data: Partial<IPromotion>) => {
   try {
-    const docRef = await addDoc(collection(db, 'promotions'), promotion);
+    const docRef = await addDoc(collection(db, 'promotions'), {
+          ...data,
+          emailSent: data.emailSent || false
+    });
+    if (data.emailSent) {
+      await sendPromotionEmails(data);
+    }
     console.log('Promotion added with ID:', docRef.id);
     return docRef.id;
   } catch (e) {
@@ -209,10 +215,10 @@ export const addPromotion = async (promotion: any) => {
   }
 };
 
-export const updatePromotion = async (id: string, promotion: IPromotion) => {
+export const updatePromotion = async (id: string, data: Partial<IPromotion>) => {
   try {
     const promotionDocRef = doc(db, 'promotions', id);
-    await updateDoc(promotionDocRef, promotion);
+    await updateDoc(promotionDocRef, data.emailSent ? data : { ...data, emailSent: false });
     console.log('Promotion updated with ID:', id);
   } catch (error) {
     console.error('Error updating promotion:', error);
