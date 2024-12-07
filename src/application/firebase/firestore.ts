@@ -32,6 +32,8 @@ export const registerUser = async (userData: IUser) => {
       promotionalEmails,
     });
 
+   
+
     // Step 3: Send email verification
     await sendEmailVerification(user);
     console.log(`User created with ID: ${user.uid}, verification email sent.`);
@@ -41,6 +43,12 @@ export const registerUser = async (userData: IUser) => {
     throw error;
   }
 };
+
+interface TicketPrices {
+  child: string;
+  adult: string;
+  senior: string
+}
 
 export const getMovies = async (): Promise<IMovie[]> => {
   console.log('Fetching all movies from Firestore...');
@@ -88,6 +96,23 @@ export const updateMovie = async (id: string, movie: IMovie) => {
     console.log('Movie updated with ID:', id);
   } catch (error) {
     console.error('Error updating movie:', error);
+    throw error;
+  }
+};
+
+export const addTicketPrice = async (id: string, ticketPrices: TicketPrices) => {
+  try {
+    const movieDocRef = doc(db, 'movies', id);
+    await updateDoc(movieDocRef, {
+      ticketPrices: {
+        child: ticketPrices.child,
+        adult: ticketPrices.adult,
+        senior: ticketPrices.senior,
+      },
+    });
+    console.log('Ticket prices added for movie with ID:', id);
+  } catch (error) {
+    console.error('Error adding ticket prices:', error);
     throw error;
   }
 };

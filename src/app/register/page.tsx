@@ -199,7 +199,7 @@ const router = useRouter(); // Initialize the router
         cardNumber: card.cardNumber ? CryptoJS.AES.encrypt(card.cardNumber, encryptionKey).toString() : '',
         expirationDate: card.expirationDate ? CryptoJS.AES.encrypt(card.expirationDate, encryptionKey).toString() : '',
         cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : '',
-        billingAddress: card.billingAddress
+        billingAddress: card.billingAddress ? CryptoJS.AES.encrypt(card.billingAddress, encryptionKey).toString() : ''
       }));
 
       // Prepare user data for Firestore
@@ -217,6 +217,7 @@ const router = useRouter(); // Initialize the router
         emailVerification: "unverified", // Add emailVerification field 
       };
       
+      console.log("Encrypted card data:", encryptedCardData);
 
       // Store user data in Firestore 
       await setDoc(doc(db, "users", user.uid), userData);

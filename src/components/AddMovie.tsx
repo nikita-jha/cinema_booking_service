@@ -21,6 +21,11 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
     cast: "",
     reviews: "",
     genre: "",
+    ticketPrices: {
+      child: "",
+      adult: "",
+      senior: "",
+    },
   });
   const [validationMessages, setValidationMessages] = useState({
     mpaaRating: "",
@@ -73,6 +78,11 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
         cast: "",
         reviews: "",
         genre: "",
+        ticketPrices: {
+          child: "",
+          adult: "",
+          senior: "",
+        },
       }); // Reset the form fields
     } catch (error) {
       console.error("Error adding movie:", error);
