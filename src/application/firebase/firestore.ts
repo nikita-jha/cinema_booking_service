@@ -223,9 +223,15 @@ export const deletePromotion = async (id: string) => {
   }
 };
 
-export const addPromotion = async (promotion: any) => {
+export const addPromotion = async (data: Partial<IPromotion>) => {
   try {
-    const docRef = await addDoc(collection(db, 'promotions'), promotion);
+    const docRef = await addDoc(collection(db, 'promotions'), {
+          ...data,
+          emailSent: data.emailSent || false
+    });
+    if (data.emailSent) {
+      await sendPromotionEmails(data);
+    }
     console.log('Promotion added with ID:', docRef.id);
     return docRef.id;
   } catch (e) {
@@ -234,10 +240,10 @@ export const addPromotion = async (promotion: any) => {
   }
 };
 
-export const updatePromotion = async (id: string, promotion: IPromotion) => {
+export const updatePromotion = async (id: string, data: Partial<IPromotion>) => {
   try {
     const promotionDocRef = doc(db, 'promotions', id);
-    await updateDoc(promotionDocRef, promotion);
+    await updateDoc(promotionDocRef, data.emailSent ? data : { ...data, emailSent: false });
     console.log('Promotion updated with ID:', id);
   } catch (error) {
     console.error('Error updating promotion:', error);
@@ -467,3 +473,46 @@ export const getSavedCardsForUser = async (userId: string) => {
     throw error;
   }
 };
+
+export const addBookingToUserHistory = async (userId: string, bookingData: {
+  movieTitle: string,
+  showDate: string,
+  showTime: string,
+  seats: { seat: number; age: number }[],
+  totalAmount: number,
+  status: string
+}) => {
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const bookingRef = collection(userDocRef, "bookings");
+    
+    await addDoc(bookingRef, {
+      ...bookingData,
+      timestamp: new Date().toISOString(),
+    });
+    
+    console.log("Booking added to user history");
+  } catch (error) {
+    console.error("Error adding booking to history:", error);
+    throw error;
+  }
+};
+
+export const getBookingsForUser = async (userId: string) => {
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const bookingsRef = collection(userDocRef, "bookings");
+    const bookingsSnapshot = await getDocs(bookingsRef);
+
+    const bookings = bookingsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    console.log("Fetched user bookings:", bookings);
+    return bookings;
+  } catch (error) {
+    console.error("Error fetching user bookings:", error);
+    throw error;
+  }
+}

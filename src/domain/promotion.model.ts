@@ -3,5 +3,6 @@ export interface IPromotion {
     discountCode: string;
     value: number;
     startDate: string;
-    endDate: string;
+  endDate: string;
+  emailSent?: boolean;
 }

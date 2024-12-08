@@ -227,4 +227,40 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
   );
 };
 
+interface EditPromotionProps {
+  promotion: IPromotion;
+  onPromotionUpdated: () => void;
+  disabled?: boolean;
+}
+
+const EditPromotion: React.FC<EditPromotionProps> = ({ 
+  promotion, 
+  onPromotionUpdated,
+  disabled = false 
+}) => {
+  // ... existing code ...
+
+  return (
+    <div className="mb-8 flex flex-col items-center">
+      <button
+        className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2 
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        onClick={() => setIsFormOpen(true)}
+        disabled={disabled}
+      >
+        Edit
+      </button>
+
+      {/* Add tooltip for disabled state */}
+      {disabled && (
+        <span className="text-sm text-gray-500">
+          Cannot edit promotion after email is sent
+        </span>
+      )}
+
+      {/* Rest of the component... */}
+    </div>
+  );
+};
+
 export default AddMovie;

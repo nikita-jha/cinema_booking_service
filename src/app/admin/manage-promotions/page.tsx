@@ -5,7 +5,7 @@ import Navbar from "../../../components/Navbar";
 import AddPromotion from "../../../components/AddPromotion";
 import EditPromotion from "../../../components/EditPromotion";
 import { IPromotion } from "../../../domain/promotion.model";
-import { deletePromotion, getPromotions } from "../../../application/firebase/firestore"; // Assuming this is the correct path to your firestore utility
+import { deletePromotion, getPromotions, updatePromotion, sendPromotionEmails } from "../../../application/firebase/firestore";
 import useRequireAuth from '../../../components/RequireAuth';
 
 const ManagePromotionsPage = () => {
@@ -77,7 +77,7 @@ const ManagePromotionsPage = () => {
                     {promotion.discountCode}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
-                    {promotion.value}%
+                    {promotion.value}
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
                     {promotion.startDate}
@@ -87,13 +87,33 @@ const ManagePromotionsPage = () => {
                   </td>
                   <td className="py-2 px-4 border-b text-gray-800">
                     <div className="flex space-x-2">
-                      <EditPromotion promotion={promotion} onPromotionUpdated={fetchPromotions} />
+                      <EditPromotion
+                        promotion={promotion}
+                        onPromotionUpdated={fetchPromotions}
+                        disabled={promotion.emailSent}
+                      />
                       <button
                         className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                         onClick={() => deleteCallback(promotion.id)}
                       >
                         Delete
                       </button>
+                      {!promotion.emailSent && (
+                        <button
+                          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                          onClick={async () => {
+                            try {
+                              await sendPromotionEmails(promotion);
+                              await updatePromotion(promotion.id, { emailSent: true });
+                              await fetchPromotions();
+                            } catch (error) {
+                              console.error("Error sending emails:", error);
+                            }
+                          }}
+                        >
+                          Send Email
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

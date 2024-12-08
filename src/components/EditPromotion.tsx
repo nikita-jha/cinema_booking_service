@@ -1,101 +1,114 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { updatePromotion } from "../application/firebase/firestore";
 import { IPromotion } from "@/domain/promotion.model";
 
 interface EditPromotionProps {
   promotion: IPromotion;
   onPromotionUpdated: () => void;
+  disabled?: boolean;
 }
 
-const EditPromotion: React.FC<EditPromotionProps> = ({ promotion, onPromotionUpdated }) => {
+const EditPromotion: React.FC<EditPromotionProps> = ({
+  promotion,
+  onPromotionUpdated,
+  disabled = false
+}) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [promotionData, setPromotionData] = useState<IPromotion>(promotion);
+  const [editData, setEditData] = useState(promotion);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setPromotionData(promotion);
-  }, [promotion]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setPromotionData({ ...promotionData, [name]: value });
+    setEditData({ ...editData, [name]: value });
   };
 
-  const handleUpdatePromotion = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updatePromotion(promotion.id, promotionData);
-      console.log("Promotion successfully updated!");
+      await updatePromotion(promotion.id, editData);
       onPromotionUpdated();
       setIsFormOpen(false);
-    } catch (error) {
-      console.error("Error updating promotion:", error);
+    } catch (err) {
+      setError("Failed to update promotion");
+      console.error(err);
     }
   };
 
   return (
     <div className="mb-8 flex flex-col items-center">
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2"
-        onClick={() => setIsFormOpen(true)}
-      >
-        Edit
-      </button>
+      <div className="group relative inline-block">
+        <button
+          className={`bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded 
+            ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          onClick={() => setIsFormOpen(true)}
+          disabled={disabled}
+        >
+          Edit
+        </button>
+        {disabled && (
+          <div className="invisible group-hover:visible absolute z-10 w-48 p-2 mt-2 text-sm 
+            text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 
+            transition-opacity duration-300">
+            Cannot edit: Emails have been sent
+          </div>
+        )}
+      </div>
 
-      {isFormOpen && (
+      {isFormOpen && !disabled && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-              onClick={() => setIsFormOpen(false)}
-            >
-              &#10005;
-            </button>
             <h3 className="text-lg font-bold mb-4">Edit Promotion</h3>
-            <form onSubmit={handleUpdatePromotion}>
+            <form onSubmit={handleSubmit}>
               <input
                 type="text"
                 name="discountCode"
-                value={promotionData.discountCode}
+                value={editData.discountCode}
                 onChange={handleInputChange}
-                placeholder="Promotion Code"
-                className="mb-2 w-full p-2 border rounded text-gray-800"
+                className="mb-2 w-full p-2 border rounded"
+                placeholder="Discount Code"
                 required
               />
               <input
-                type="number"
+                type="text"
                 name="value"
-                value={promotionData.value}
+                value={editData.value}
                 onChange={handleInputChange}
-                placeholder="Discount Percentage"
-                className="mb-2 w-full p-2 border rounded text-gray-800"
+                className="mb-2 w-full p-2 border rounded"
+                placeholder="Value"
                 required
               />
               <input
                 type="date"
                 name="startDate"
-                value={promotionData.startDate}
+                value={editData.startDate}
                 onChange={handleInputChange}
-                className="mb-2 w-full p-2 border rounded text-gray-800"
+                className="mb-2 w-full p-2 border rounded"
                 required
               />
               <input
                 type="date"
                 name="endDate"
-                value={promotionData.endDate}
+                value={editData.endDate}
                 onChange={handleInputChange}
-                className="mb-2 w-full p-2 border rounded text-gray-800"
+                className="mb-2 w-full p-2 border rounded"
                 required
               />
-              <div className="flex justify-end mt-4">
+              {error && <p className="text-red-500 mb-2">{error}</p>}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="px-4 py-2 bg-blue-500 text-white rounded"
                 >
-                  Update Promotion
+                  Save
                 </button>
               </div>
             </form>
