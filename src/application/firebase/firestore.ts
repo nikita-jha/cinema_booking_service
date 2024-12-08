@@ -473,3 +473,46 @@ export const getSavedCardsForUser = async (userId: string) => {
     throw error;
   }
 };
+
+export const addBookingToUserHistory = async (userId: string, bookingData: {
+  movieTitle: string,
+  showDate: string,
+  showTime: string,
+  seats: { seat: number; age: number }[],
+  totalAmount: number,
+  status: string
+}) => {
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const bookingRef = collection(userDocRef, "bookings");
+    
+    await addDoc(bookingRef, {
+      ...bookingData,
+      timestamp: new Date().toISOString(),
+    });
+    
+    console.log("Booking added to user history");
+  } catch (error) {
+    console.error("Error adding booking to history:", error);
+    throw error;
+  }
+};
+
+export const getBookingsForUser = async (userId: string) => {
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const bookingsRef = collection(userDocRef, "bookings");
+    const bookingsSnapshot = await getDocs(bookingsRef);
+
+    const bookings = bookingsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    console.log("Fetched user bookings:", bookings);
+    return bookings;
+  } catch (error) {
+    console.error("Error fetching user bookings:", error);
+    throw error;
+  }
+}

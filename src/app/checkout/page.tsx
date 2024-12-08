@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import useRequireAuth from '../../components/RequireAuth';
-import { getSavedCardsForUser, reserveSeats } from "../../application/firebase/firestore";
+import { getSavedCardsForUser, reserveSeats, addBookingToUserHistory } from "../../application/firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth"; // Import for auth state monitoring
 import { auth } from "../../application/firebase/config"; // Firebase Auth instance
 import * as crypto from 'crypto';
@@ -232,26 +232,39 @@ const CheckoutPage = () => {
   };
 
 
-  const handleConfirmPayment = async () => {
-    if (!isPaymentInfoComplete()) {
-      setErrorMessage("Please select a saved card or fill out all payment details.");
-      return;
-    }
-  
-    setErrorMessage("");
+const handleConfirmPayment = async () => {
+  if (!isPaymentInfoComplete()) {
+    setErrorMessage(
+      "Please select a saved card or fill out all payment details."
+    );
+    return;
+  }
 
-    if (!validateCreditCardInfo(creditCardInfo)) {
-      setErrorMessage("Invalid payment information. Please check your details and try again.");
-      return;
-    }
+  setErrorMessage("");
 
-    // Call reserveSeats method
+  if (!validateCreditCardInfo(creditCardInfo)) {
+    setErrorMessage(
+      "Invalid payment information. Please check your details and try again."
+    );
+    return;
+  }
+
+  try {
+    // Reserve seats first
     if (!userId) throw new Error("User must be logged in to reserve seats.");
     await reserveSeats(showId, selectedSeats, userId);
 
-    console.log("Seats reserved successfully!");
-    
-  
+    // Add booking to user history
+    await addBookingToUserHistory(userId, {
+      movieTitle: title,
+      showDate,
+      showTime,
+      seats: selectedSeats,
+      totalAmount: overallTotal,
+      status: "confirmed",
+    });
+
+    // Redirect to confirmation page
     const queryParams = new URLSearchParams({
       title,
       showDate,
@@ -261,7 +274,11 @@ const CheckoutPage = () => {
     });
 
     router.push(`/confirmation?${queryParams.toString()}`);
-  };
+  } catch (error) {
+    setErrorMessage("Failed to process payment. Please try again.");
+    console.error("Payment error:", error);
+  }
+};
 
   const sanitizeInput = (value: string): string => {
     return value.replace(/[^a-zA-Z0-9 /]/g, ""); // Allow alphanumeric and common characters
