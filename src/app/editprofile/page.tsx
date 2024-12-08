@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import Navbar from "../../components/Navbar";
 import { auth, db } from "../../application/firebase/config";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
 import { updatePassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getBookingsForUser } from "@/application/firebase/firestore";
 import { useRouter } from "next/navigation";
 import ChangePassword from "../../components/ChangePassword";
 import { useUser} from "../../context/UserContext";
@@ -56,6 +57,7 @@ const EditProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const router = useRouter();
   const { setUser } = useUser();
 
@@ -248,12 +250,37 @@ const EditProfilePage = () => {
   
   const fetchOrders = async (userId: string) => {
     try {
-      const ordersData = await getOrdersByUserId(userId);
+      const ordersData = await getBookingsForUser(userId);
+      console.log('Orders:', ordersData);
       setOrders(ordersData);
     } catch (error) {
       console.error('Error fetching orders:', error);
     }
   };
+
+  const fetchBookings = async () => {
+    
+    try {
+      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+      const bookingsRef = collection(userDoc, "bookings");
+      const bookingsSnapshot = await getDocs(bookingsRef);
+      
+      const bookingsData = bookingsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      setBookings(bookingsData);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "orders") {
+      fetchBookings();
+    }
+  }, [activeTab]);
 
   type TabType = "personal" | "payment" | "address" | "orders";
 
@@ -556,34 +583,46 @@ const EditProfilePage = () => {
 
   const OrderHistory = () => {
     return (
-      <div className="mt-4">
-        <h2 className="text-2xl font-bold mb-4">Order History</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 border-b text-left">Date</th>
-                <th className="px-6 py-3 border-b text-left">Movie Title</th>
-                <th className="px-6 py-3 border-b text-left">Showtime</th>
-                <th className="px-6 py-3 border-b text-left">Seats</th>
-                <th className="px-6 py-3 border-b text-left">Total Amount</th>
-                <th className="px-6 py-3 border-b text-left">Status</th>
+      <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
+        <h1 className="text-2xl font-semibold mb-4 text-gray-800">
+          Order History
+        </h1>
+        <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
+          <thead className="bg-blue-100">
+            <tr>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
+                Date
+              </th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
+                Movie Title
+              </th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
+                Showtime
+              </th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
+                Seats
+              </th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
+                Total Amount
+              </th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order.id}>
+                <td className="px-6 py-4 border-b">{order.date}</td>
+                <td className="px-6 py-4 border-b">{order.movieTitle}</td>
+                <td className="px-6 py-4 border-b">{order.showtime}</td>
+                <td className="px-6 py-4 border-b">{order.seats.join(', ')}</td>
+                <td className="px-6 py-4 border-b">{order.totalAmount}</td>
+                <td className="px-6 py-4 border-b">{order.status}</td>
               </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td className="px-6 py-4 border-b">{order.date}</td>
-                  <td className="px-6 py-4 border-b">{order.movieTitle}</td>
-                  <td className="px-6 py-4 border-b">{order.showtime}</td>
-                  <td className="px-6 py-4 border-b">{order.seats.join(', ')}</td>
-                  <td className="px-6 py-4 border-b">{order.totalAmount}</td>
-                  <td className="px-6 py-4 border-b">{order.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   };
@@ -595,7 +634,7 @@ const EditProfilePage = () => {
     <div>
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-center">Edit Profile</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center">My Account</h1>
 
         <form onSubmit={handleSubmit}>
           <div style={containerStyle}>
@@ -917,7 +956,38 @@ const EditProfilePage = () => {
                 </div>
               )}
 
-              {activeTab === "orders" && <OrderHistory />}
+              {activeTab === "orders" && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
+                    <thead className="bg-blue-100">
+                      <tr>
+                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Date</th>
+                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Movie Title</th>
+                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Showtime</th>
+                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Seats</th>
+                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Total Amount</th>
+                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookings.map((booking) => (
+                        <tr key={booking.id} className="hover:bg-gray-50">
+                          <td className="py-2 px-4 border-b text-gray-800">{booking.showDate}</td>
+                          <td className="py-2 px-4 border-b text-gray-800">{booking.movieTitle}</td>
+                          <td className="py-2 px-4 border-b text-gray-800">{booking.showTime}</td>
+                          <td className="py-2 px-4 border-b text-gray-800">
+                            {booking.seats.map(s => s.seat).join(", ")}
+                          </td>
+                          <td className="py-2 px-4 border-b text-gray-800">
+                            ${booking.totalAmount.toFixed(2)}
+                          </td>
+                          <td className="py-2 px-4 border-b text-gray-800">{booking.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </form>
