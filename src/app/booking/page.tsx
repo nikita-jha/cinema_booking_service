@@ -16,6 +16,9 @@ const formatTime = (time24) => {
   return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
 };
 
+// Add these styles
+const inputStyle = { color: 'black' };
+
 const BookingPage = () => {
   const [movieData, setMovieData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -245,6 +248,7 @@ const BookingPage = () => {
                 value={selectedDate || ""}
                 onChange={handleDateChange}
                 min={currentDateString} // Restrict to future dates only
+                style={inputStyle} // Apply the styles to the date input
               />
             </div>
   
@@ -333,6 +337,7 @@ const BookingPage = () => {
                     className="p-1 ml-2 border rounded"
                     value={seat.age || ""}
                     onChange={(e) => handleAgeChange(seat.seat, +e.target.value)}
+                    style={inputStyle} // Apply the styles to the age input
                   />
                 </label>
               </div>

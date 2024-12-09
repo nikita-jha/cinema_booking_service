@@ -18,6 +18,7 @@ import { userAgent, userAgentFromString } from "next/server";
 const EditProfilePage = () => {
   useRequireAuth();
   interface UserData {
+    uid: string;
     firstName?: string;
     lastName?: string;
     phone?: string;
@@ -585,13 +586,13 @@ const [bookingError, setBookingError] = useState<string | null>(null);
 
 // Add fetch function
 const fetchUserBookings = async () => {
-  if (!userData?.id) return;
+  if (!userData?.uid) return;
   
   setIsLoadingBookings(true);
   setBookingError(null);
   
   try {
-    const bookings = await getBookingsForUser(userData.id);
+    const bookings = await getBookingsForUser(userData.uid);
     setUserBookings(bookings);
   } catch (error) {
     console.error("Error fetching bookings:", error);
@@ -609,10 +610,6 @@ useEffect(() => {
 
 // Update OrderHistory component
 const OrderHistory = () => {
-  useEffect(() => {
-    fetchUserBookings();
-  }, []);
-
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
       <h1 style={{ 
