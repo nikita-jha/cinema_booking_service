@@ -208,10 +208,11 @@ const BookingPage = () => {
               <input
                 type="date"
                 id="date"
-                className="p-2 border rounded w-full"
+                className="mb-2 w-full p-2 border rounded text-black" // Changed text color to black
                 value={selectedDate || ""}
                 onChange={handleDateChange}
                 min={currentDateString} // Restrict to future dates only
+                required
               />
             </div>
 
@@ -289,9 +290,10 @@ const BookingPage = () => {
                   <input
                     type="number"
                     min="1"
-                    className="p-1 ml-2 border rounded"
+                    className="mb-2 w-full p-2 border rounded text-black" // Changed text color to black
                     value={seat.age || ""}
                     onChange={(e) => handleAgeChange(seat.seat, +e.target.value)}
+                    required
                   />
                 </label>
               </div>
