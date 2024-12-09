@@ -218,6 +218,8 @@ const CheckoutPage = () => {
     await reserveSeats(showId, selectedSeats, userId);
 
     console.log("Seats reserved successfully!");
+
+    sessionStorage.removeItem("bookingState");
     
   
     const queryParams = new URLSearchParams({
