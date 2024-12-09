@@ -254,6 +254,7 @@ const handleConfirmPayment = async () => {
     if (!userId) throw new Error("User must be logged in to reserve seats.");
     await reserveSeats(showId, selectedSeats, userId);
 
+<<<<<<< HEAD
     // Add booking to user history
     await addBookingToUserHistory(userId, {
       movieTitle: title,
@@ -265,6 +266,13 @@ const handleConfirmPayment = async () => {
     });
 
     // Redirect to confirmation page
+=======
+    console.log("Seats reserved successfully!");
+
+    sessionStorage.removeItem("bookingState");
+    
+  
+>>>>>>> 7cf0888 (Clearing storage on confirm payment)
     const queryParams = new URLSearchParams({
       title,
       showDate,
