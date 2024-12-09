@@ -12,6 +12,9 @@ import * as crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../application/firebase/config";
+import { collection, query, where, getDocs } from "firebase/firestore";
+
+
 
 const CheckoutPage = () => {
   useRequireAuth();
@@ -31,6 +34,7 @@ const CheckoutPage = () => {
   const [savedCards, setSavedCards] = useState<any[]>([]);
   const [loadingCards, setLoadingCards] = useState<boolean>(true);
 
+  const [appliedPromotion, setAppliedPromotion] = useState<any | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
   const [useSavedCard, setUseSavedCard] = useState<boolean>(false);
   const [creditCardInfo, setCreditCardInfo] = useState({
@@ -41,6 +45,56 @@ const CheckoutPage = () => {
     billingAddress: "",
   
   });
+
+  const fetchPromotionData = async (promoCode: string) => {
+    const promotionsRef = collection(db, "promotions");
+    const q = query(promotionsRef, where("discountCode", "==", promoCode));
+    const querySnapshot = await getDocs(q);
+  
+    if (!querySnapshot.empty) {
+      const promotionDoc = querySnapshot.docs[0];
+      return promotionDoc.data();
+    } else {
+      return null;
+    }
+  };
+
+  const handleApplyPromoCode = async () => {
+    const promotionData = await fetchPromotionData(promoCode);
+  
+    if (promotionData) {
+      const currentDate = new Date();
+      const startDate = new Date(promotionData.startDate);
+      const endDate = new Date(promotionData.endDate);
+  
+      if (currentDate >= startDate && currentDate <= endDate) {
+        const discountPercentage = promotionData.value / 100;
+        const discountedOrderTotal = initialOrderTotal * (1 - discountPercentage);
+        const newTaxAmount = discountedOrderTotal * 0.07;
+        const newOverallTotal = discountedOrderTotal + newTaxAmount;
+        setOrderTotal(discountedOrderTotal);
+        setTaxAmount(newTaxAmount);
+        setOverallTotal(newOverallTotal);
+        setIsDiscountApplied(true);
+        setAppliedPromotion(promotionData); // Update state with promotion data
+        setErrorMessage("");
+      } else {
+        setErrorMessage("Promo code is not valid for the current date.");
+        setOrderTotal(initialOrderTotal);
+        setTaxAmount(initialTaxAmount);
+        setOverallTotal(initialOverallTotal);
+        setIsDiscountApplied(false);
+        setAppliedPromotion(null); // Clear promotion data
+      }
+    } else {
+      setErrorMessage("Invalid promo code.");
+      setOrderTotal(initialOrderTotal);
+      setTaxAmount(initialTaxAmount);
+      setOverallTotal(initialOverallTotal);
+      setIsDiscountApplied(false);
+      setAppliedPromotion(null); // Clear promotion data
+    }
+  };
 
   const getAgeCategory = (age: number): string => {
     if (age < 13) {
@@ -233,23 +287,6 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleApplyPromoCode = () => {
-    if (promoCode === 'DISCOUNT') {
-      const discountedOrderTotal = initialOrderTotal * 0.9;
-      const newTaxAmount = discountedOrderTotal * 0.07;
-      const newOverallTotal = discountedOrderTotal + newTaxAmount;
-      setOrderTotal(discountedOrderTotal);
-      setTaxAmount(newTaxAmount);
-      setOverallTotal(newOverallTotal);
-      setIsDiscountApplied(true);
-    } else {
-      setOrderTotal(initialOrderTotal);
-      setTaxAmount(initialTaxAmount);
-      setOverallTotal(initialOverallTotal);
-      setIsDiscountApplied(false);
-    }
-  };
-
   const validateCreditCardInfo = ({ cardNumber, cvv, expirationDate, billingAddress }: typeof creditCardInfo): boolean => {
     const cardNumberRegex = /^\d{16}$/; // Ensure 16 digits
     const cvvRegex = /^\d{3,4}$/; // Ensure 3 or 4 digits
@@ -408,9 +445,9 @@ const handleConfirmPayment = async () => {
           <span className="text-green-700 font-bold">
             ${orderTotal.toFixed(2)}
           </span>{" "}
-          {isDiscountApplied && (
-            <span className="text-red-500 text-sm">(10% Off Applied)</span>
-          )}
+          {isDiscountApplied && appliedPromotion && (
+            <span className="text-red-500 text-sm">({appliedPromotion.value}% Off Applied)</span>
+            )}
         </p>
         <p className="text-lg mb-4">
           <span className="font-bold text-gray-700">Tax:</span>{" "}
