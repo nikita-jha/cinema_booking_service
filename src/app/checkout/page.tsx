@@ -313,6 +313,30 @@ const CheckoutPage = () => {
     return isValid;
   };
 
+  const sendBookingConfirmationEmail = async (userEmail: string, bookingDetails: any) => {
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          subject: "Booking Confirmation - Cinema E-Booking System",
+          message: `Your booking is confirmed for ${bookingDetails.movieTitle} on ${bookingDetails.showDate} at ${bookingDetails.showTime}. Seats: ${bookingDetails.seats.map(seat => seat.seat).join(', ')}. Total Amount: $${bookingDetails.totalAmount.toFixed(2)}.`,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+  
+      const data = await response.json();
+    } catch (error) {
+      console.error("Failed to send email:", error);
+    }
+  };
+
 
 const handleConfirmPayment = async () => {
   if (!isPaymentInfoComplete()) {
@@ -336,15 +360,21 @@ const handleConfirmPayment = async () => {
     if (!userId) throw new Error("User must be logged in to reserve seats.");
     await reserveSeats(showId, selectedSeats, userId);
 
-    // Add booking to user history
-    await addBookingToUserHistory(userId, {
+    const bookingDetails = {
       movieTitle: title,
       showDate,
       showTime,
       seats: selectedSeats,
       totalAmount: overallTotal,
       status: "confirmed",
-    });
+    };
+    await addBookingToUserHistory(userId, bookingDetails);
+    
+    // Send confirmation email
+    const userEmail = auth.currentUser?.email; // Retrieve the user's email from the auth data
+    if (userEmail) {
+      await sendBookingConfirmationEmail(userEmail, bookingDetails);
+    }
 
     sessionStorage.removeItem("bookingState");
 
