@@ -264,6 +264,8 @@ const handleConfirmPayment = async () => {
       status: "confirmed",
     });
 
+    sessionStorage.removeItem("bookingState");
+
     // Redirect to confirmation page
     const queryParams = new URLSearchParams({
       title,
