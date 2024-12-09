@@ -12,6 +12,7 @@ import * as crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../application/firebase/config";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const CheckoutPage = () => {
   useRequireAuth();
@@ -44,6 +45,52 @@ const CheckoutPage = () => {
 
   console.log("Age: ", selectedSeats.map((s) => s.age));
   console.log("Checkout Ticket Price", ticketPrice);
+
+  const fetchPromotionData = async (promoCode: string) => {
+    const promotionsRef = collection(db, "promotions");
+    const q = query(promotionsRef, where("discountCode", "==", promoCode));
+    const querySnapshot = await getDocs(q);
+  
+    if (!querySnapshot.empty) {
+      const promotionDoc = querySnapshot.docs[0];
+      return promotionDoc.data();
+    } else {
+      return null;
+    }
+  };
+  
+  const handleApplyPromoCode = async () => {
+    const promotionData = await fetchPromotionData(promoCode);
+  
+    if (promotionData) {
+      const currentDate = new Date();
+      const startDate = new Date(promotionData.startDate);
+      const endDate = new Date(promotionData.endDate);
+  
+      if (currentDate >= startDate && currentDate <= endDate) {
+        const discountPercentage = promotionData.value / 100;
+        const discountedOrderTotal = initialOrderTotal * (1 - discountPercentage);
+        const newTaxAmount = discountedOrderTotal * 0.07;
+        const newOverallTotal = discountedOrderTotal + newTaxAmount;
+        setOrderTotal(discountedOrderTotal);
+        setTaxAmount(newTaxAmount);
+        setOverallTotal(newOverallTotal);
+        setIsDiscountApplied(true);
+      } else {
+        setErrorMessage("Promo code is not valid for the current date.");
+        setOrderTotal(initialOrderTotal);
+        setTaxAmount(initialTaxAmount);
+        setOverallTotal(initialOverallTotal);
+        setIsDiscountApplied(false);
+      }
+    } else {
+      setErrorMessage("Invalid promo code.");
+      setOrderTotal(initialOrderTotal);
+      setTaxAmount(initialTaxAmount);
+      setOverallTotal(initialOverallTotal);
+      setIsDiscountApplied(false);
+    }
+  };
 
 
   //const ticketPrice = 10; // Example: $10 per ticket
@@ -187,23 +234,6 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleApplyPromoCode = () => {
-    if (promoCode === 'DISCOUNT') {
-      const discountedOrderTotal = initialOrderTotal * 0.9;
-      const newTaxAmount = discountedOrderTotal * 0.07;
-      const newOverallTotal = discountedOrderTotal + newTaxAmount;
-      setOrderTotal(discountedOrderTotal);
-      setTaxAmount(newTaxAmount);
-      setOverallTotal(newOverallTotal);
-      setIsDiscountApplied(true);
-    } else {
-      setOrderTotal(initialOrderTotal);
-      setTaxAmount(initialTaxAmount);
-      setOverallTotal(initialOverallTotal);
-      setIsDiscountApplied(false);
-    }
-  };
-
   const validateCreditCardInfo = ({ cardNumber, cvv, expirationDate, billingAddress }: typeof creditCardInfo): boolean => {
     const cardNumberRegex = /^\d{16}$/; // Ensure 16 digits
     const cvvRegex = /^\d{3,4}$/; // Ensure 3 or 4 digits
@@ -331,7 +361,7 @@ const handleConfirmPayment = async () => {
             </div>
             <p className="mb-2">
               Order Total: ${orderTotal.toFixed(2)}{' '}
-              {isDiscountApplied && <span className="text-red-500">(10% Off)</span>}
+              {isDiscountApplied && <span className="text-red-500">({promotionData.value}% Off))</span>}
             </p>
             <p className="mb-2">Tax: ${taxAmount.toFixed(2)}</p>
             <p className="mb-4">Overall Total: ${overallTotal.toFixed(2)}</p>
