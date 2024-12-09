@@ -32,6 +32,7 @@ const CheckoutPage = () => {
   const [savedCards, setSavedCards] = useState<any[]>([]);
   const [loadingCards, setLoadingCards] = useState<boolean>(true);
 
+  const [appliedPromotion, setAppliedPromotion] = useState<any>(null);
   const [promoCode, setPromoCode] = useState<string>("");
   const [useSavedCard, setUseSavedCard] = useState<boolean>(false);
   const [creditCardInfo, setCreditCardInfo] = useState({
@@ -76,12 +77,14 @@ const CheckoutPage = () => {
         setTaxAmount(newTaxAmount);
         setOverallTotal(newOverallTotal);
         setIsDiscountApplied(true);
+        setAppliedPromotion(promotionData);
       } else {
         setErrorMessage("Promo code is not valid for the current date.");
         setOrderTotal(initialOrderTotal);
         setTaxAmount(initialTaxAmount);
         setOverallTotal(initialOverallTotal);
         setIsDiscountApplied(false);
+        setAppliedPromotion(null); 
       }
     } else {
       setErrorMessage("Invalid promo code.");
@@ -89,6 +92,7 @@ const CheckoutPage = () => {
       setTaxAmount(initialTaxAmount);
       setOverallTotal(initialOverallTotal);
       setIsDiscountApplied(false);
+      setAppliedPromotion(null); 
     }
   };
 
@@ -361,8 +365,8 @@ const handleConfirmPayment = async () => {
             </div>
             <p className="mb-2">
               Order Total: ${orderTotal.toFixed(2)}{' '}
-              {isDiscountApplied && <span className="text-red-500">({promotionData.value}% Off))</span>}
-            </p>
+              {isDiscountApplied && appliedPromotion && <span className="text-red-500">({appliedPromotion.value}% Off)</span>}
+              </p>
             <p className="mb-2">Tax: ${taxAmount.toFixed(2)}</p>
             <p className="mb-4">Overall Total: ${overallTotal.toFixed(2)}</p>
           </div>
