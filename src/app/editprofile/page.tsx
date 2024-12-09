@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, use } from "react";
+import React, { useState, useEffect, useCallback, use, useContext } from "react";
 import Navbar from "../../components/Navbar";
 import { auth, db } from "../../application/firebase/config";
 import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
@@ -12,6 +12,7 @@ import { useUser} from "../../context/UserContext";
 import CryptoJS from 'crypto-js';
 import { User } from "firebase/auth";
 import useRequireAuth from '../../components/RequireAuth';
+import { userAgent, userAgentFromString } from "next/server";
 
 
 const EditProfilePage = () => {
@@ -59,7 +60,7 @@ const EditProfilePage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const router = useRouter();
-  const { setUser } = useUser();
+  const {user, setUser } = useUser();
 
   const [validationMessages, setValidationMessages] = useState({
     firstName: "",
@@ -259,22 +260,18 @@ const EditProfilePage = () => {
   };
 
   const fetchBookings = async () => {
-    
-    try {
-      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-      const bookingsRef = collection(userDoc, "bookings");
-      const bookingsSnapshot = await getDocs(bookingsRef);
-      
-      const bookingsData = bookingsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setBookings(bookingsData);
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-    }
-  };
+  if (!user?.id) {
+    console.log("No user logged in");
+    return;
+  }
+  
+  try {
+    const bookingsData = await getBookingsForUser(user.id);
+    setBookings(bookingsData);
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+  }
+};
 
   useEffect(() => {
     if (activeTab === "orders") {
@@ -581,54 +578,352 @@ const EditProfilePage = () => {
     marginBottom: "10px",
   };
 
-  const OrderHistory = () => {
-    return (
-      <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-semibold mb-4 text-gray-800">
-          Order History
-        </h1>
+  // Add state
+const [userBookings, setUserBookings] = useState<any[]>([]);
+const [isLoadingBookings, setIsLoadingBookings] = useState(false);
+const [bookingError, setBookingError] = useState<string | null>(null);
+
+// Add fetch function
+const fetchUserBookings = async () => {
+  if (!userData?.id) return;
+  
+  setIsLoadingBookings(true);
+  setBookingError(null);
+  
+  try {
+    const bookings = await getBookingsForUser(userData.id);
+    setUserBookings(bookings);
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    setBookingError("Failed to load booking history");
+  } finally {
+    setIsLoadingBookings(false);
+  }
+};
+
+useEffect(() => {
+  if (activeTab === 'orders') {
+    fetchUserBookings();
+  }
+}, [activeTab]);
+
+// Update OrderHistory component
+const OrderHistory = () => {
+  useEffect(() => {
+    fetchUserBookings();
+  }, []);
+
+  return (
+    <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h1 style={{ 
+        color: "#333", 
+        fontSize: "2rem",
+        fontWeight: "bold",
+        marginBottom: "1rem"
+      }}>
+        Hey {userData?.firstName}!
+      </h1>
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        Order History
+      </h2>
+      
+      {isLoadingBookings && <div>Loading bookings...</div>}
+      {bookingError && <div className="text-red-500">{bookingError}</div>}
+      
+      {!isLoadingBookings && !bookingError && (
         <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
           <thead className="bg-blue-100">
             <tr>
-              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
-                Date
-              </th>
-              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
-                Movie Title
-              </th>
-              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
-                Showtime
-              </th>
-              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
-                Seats
-              </th>
-              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
-                Total Amount
-              </th>
-              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">
-                Status
-              </th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Date</th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Movie</th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Time</th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Seats</th>
+              <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Total</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td className="px-6 py-4 border-b">{order.date}</td>
-                <td className="px-6 py-4 border-b">{order.movieTitle}</td>
-                <td className="px-6 py-4 border-b">{order.showtime}</td>
-                <td className="px-6 py-4 border-b">{order.seats.join(', ')}</td>
-                <td className="px-6 py-4 border-b">{order.totalAmount}</td>
-                <td className="px-6 py-4 border-b">{order.status}</td>
+            {userBookings.map((booking) => (
+              <tr key={booking.id} className="hover:bg-gray-50">
+                <td className="py-2 px-4 border-b text-gray-800">{booking.showDate}</td>
+                <td className="py-2 px-4 border-b text-gray-800">{booking.movieTitle}</td>
+                <td className="py-2 px-4 border-b text-gray-800">{booking.showTime}</td>
+                <td className="py-2 px-4 border-b text-gray-800">
+                  {booking.seats.map((seat: any) => seat.seat).join(", ")}
+                </td>
+                <td className="py-2 px-4 border-b text-gray-800">
+                  ${booking.totalAmount.toFixed(2)}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-    );
-  };
+      )}
+    </div>
+  );
+};
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "personal":
+        return (
+          <div>
+            <h1
+              style={{
+                color: "#333",
+                fontSize: "2rem",
+                fontWeight: "bold",
+              }}
+            >
+              {" "}
+              Hey {userData?.firstName}!
+            </h1>
+            <h2 style={{ color: "#333", fontWeight: "bold" }}>
+              Personal Information
+            </h2>
+            <label style={labelStyle} htmlFor="firstName">
+              First Name
+            </label>
+            <input
+              style={inputStyle}
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={userData?.firstName || ""}
+              onChange={handleInputChange}
+            />
+            {validationMessages.firstName && <p className="text-red-500 text-sm mt-1">{validationMessages.firstName}</p>}
+
+            <label style={labelStyle} htmlFor="lastName">
+              Last Name
+            </label>
+            <input
+              style={inputStyle}
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={userData?.lastName || ""}
+              onChange={handleInputChange}
+            />
+            {validationMessages.lastName && <p className="text-red-500 text-sm mt-1">{validationMessages.lastName}</p>}
+
+            <label style={labelStyle} htmlFor="phone">
+              Phone Number
+            </label>
+            <input
+              style={inputStyle}
+              type="text"
+              id="phone"
+              name="phone"
+              value={userData?.phone || ""}
+              onChange={handleInputChange}
+            />
+            {validationMessages.phone && <p className="text-red-500 text-sm mt-1">{validationMessages.phone}</p>}
+
+            <label style={labelStyle} htmlFor="email">
+              Email
+            </label>
+            <input
+              style={readOnlyInputStyle}
+              type="email"
+              id="email"
+              value={userData?.email || ""}
+              readOnly
+            />
+
+            <div style={{ marginTop: "20px" }}>
+              <label
+                style={{
+                  ...labelStyle,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="promotionalEmails"
+                  name="promotionalEmails"
+                  checked={userData?.promotionalEmails || false}
+                  onChange={(e) => {
+                    setUserData((prevData) => ({
+                      ...prevData,
+                      promotionalEmails: e.target.checked,
+                    }));
+                  }}
+                />
+                <span style={{ marginLeft: "8px" }}>
+                  Sign up for promotional emails
+                </span>
+              </label>
+            </div>
+
+            <ChangePassword />
+          </div>
+        );
+      case "payment":
+        return (
+          <div>
+            <h1 style={{ color: "#333", fontSize: "2rem", fontWeight: "bold" }}>
+              Hey {userData?.firstName}!
+            </h1>
+
+            <h2 style={{ color: "#333", fontWeight: "bold" }}>
+              Payment Information
+            </h2>
+            <div style={cardContainerStyle}>
+              {userData?.cardData &&
+                Object.entries(userData.cardData).map(
+                  ([cardId, card], index) => (
+                    <div key={cardId} style={cardStyle}>
+                      <h3 style={{ color: "#333", fontWeight: "bold" }}>
+                        Card {index + 1}
+                      </h3>
+
+                      <label style={labelStyle} htmlFor={`cardType${index}`}>
+                        Card Type
+                      </label>
+                      <select
+                        style={inputStyle}
+                        id={`cardType${index}`}
+                        name="cardType"
+                        value={card.cardType ? card.cardType.toLowerCase() : ""} // Convert to lowercase for comparison
+                        onChange={(e) => handleCardInputChange(cardId, e)}
+                        >
+                        <option value="">Select Card Type</option>
+                        <option value="visa">Visa</option>
+                        <option value="mastercard">MasterCard</option>
+                        <option value="amex">American Express</option>
+                      </select>
+
+                      <label style={labelStyle} htmlFor={`cardNumber${index}`}>
+                        Card Number
+                      </label>
+                      <input
+                        style={inputStyle}
+                        type="text"
+                        id={`cardNumber${index}`}
+                        name="cardNumber"
+                        value={card.cardNumber}
+                        onChange={(e) => handleCardInputChange(cardId, e)}
+                        />
+                        {validationMessages[`card${cardId}_cardNumber`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_cardNumber`]}</p>}
+
+                      <label style={labelStyle} htmlFor={`expiryDate${index}`}>
+                        Expiration Date
+                      </label>
+                      <input
+                        style={inputStyle}
+                        type="text"
+                        id={`expiryDate${index}`}
+                        name="expirationDate"
+                        value={card.expirationDate}
+                        onChange={(e) => handleCardInputChange(cardId, e)}
+                        placeholder="MM/YY"
+                      />
+                      {validationMessages[`card${cardId}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_expirationDate`]}</p>}
+
+                      <label style={labelStyle} htmlFor={`cvv${index}`}>
+                        CVV
+                      </label>
+                      <input
+                        style={inputStyle}
+                        type="text"
+                        id={`cvv${index}`}
+                        name="cvv"
+                        value={card.cvv}
+                        onChange={(e) => handleCardInputChange(cardId, e)}
+                        />
+                        {validationMessages[`card${cardId}_cvv`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_cvv`]}</p>}
+
+                      <label style={labelStyle} htmlFor={`billingAddress${index}`}>
+                        Billing Address
+                      </label>
+                      <input
+                        style={inputStyle}
+                        type="text"
+                        id={`billingAddress${index}`}
+                        name="billingAddress"
+                        value={card.billingAddress || ""} // This line ensures the billing address is populated
+                        onChange={(e) => handleCardInputChange(cardId, e)}
+                      />
+                    </div>
+                  )
+                )}
+            </div>
+          </div>
+        );
+      case "address":
+        return (
+          <div>
+            <h1 style={{ color: "#333", fontSize: "2rem", fontWeight: "bold" }}>
+              Hey {userData?.firstName}!
+            </h1>
+
+            <h2 style={{ color: "#333", fontWeight: "bold" }}>Home Address</h2>
+            <label style={labelStyle} htmlFor="street">Street</label>
+            <input
+              style={inputStyle}
+              type="text"
+              id="street"
+              name="address.street"
+              value={userData?.address?.street || ""}
+              onChange={handleInputChange}
+            />
+
+            <label style={labelStyle} htmlFor="city">City</label>
+            <input
+              style={inputStyle}
+              type="text"
+              id="city"
+              name="address.city"
+              value={userData?.address?.city || ""}
+              onChange={handleInputChange}
+            />
+
+            <label style={labelStyle} htmlFor="state">State</label>
+            <select
+              style={inputStyle}
+              id="state"
+              name="address.state"
+              value={userData?.address?.state || ""}
+              onChange={handleInputChange}
+            >
+              <option value="">Select State</option>
+              {[
+                "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+                "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+                "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+                "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+                "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+              ].map((state) => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
+
+            <label style={labelStyle} htmlFor="zip">ZIP Code</label>
+            <input
+              style={inputStyle}
+              type="text"
+              id="zip"
+              name="address.zip"
+              value={userData?.address?.zip || ""}
+              onChange={handleInputChange}
+            />
+            {validationMessages["address.zip"] && <p className="text-red-500 text-sm mt-1">{validationMessages["address.zip"]}</p>}
+          </div>
+        );
+      case "orders":
+        return (
+          <div>
+            <OrderHistory />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div>
@@ -709,285 +1004,7 @@ const EditProfilePage = () => {
 
             {/* Content */}
             <div style={contentStyle}>
-              {activeTab === "personal" && (
-                <div>
-                  <h1
-                    style={{
-                      color: "#333",
-                      fontSize: "2rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {" "}
-                    Hey {userData?.firstName}!
-                  </h1>
-                  <h2 style={{ color: "#333", fontWeight: "bold" }}>
-                    Personal Information
-                  </h2>
-                  <label style={labelStyle} htmlFor="firstName">
-                    First Name
-                  </label>
-                  <input
-                    style={inputStyle}
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={userData?.firstName || ""}
-                    onChange={handleInputChange}
-                  />
-                  {validationMessages.firstName && <p className="text-red-500 text-sm mt-1">{validationMessages.firstName}</p>}
-
-                  <label style={labelStyle} htmlFor="lastName">
-                    Last Name
-                  </label>
-                  <input
-                    style={inputStyle}
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={userData?.lastName || ""}
-                    onChange={handleInputChange}
-                  />
-                  {validationMessages.lastName && <p className="text-red-500 text-sm mt-1">{validationMessages.lastName}</p>}
-
-                  <label style={labelStyle} htmlFor="phone">
-                    Phone Number
-                  </label>
-                  <input
-                    style={inputStyle}
-                    type="text"
-                    id="phone"
-                    name="phone"
-                    value={userData?.phone || ""}
-                    onChange={handleInputChange}
-                  />
-                  {validationMessages.phone && <p className="text-red-500 text-sm mt-1">{validationMessages.phone}</p>}
-
-                  <label style={labelStyle} htmlFor="email">
-                    Email
-                  </label>
-                  <input
-                    style={readOnlyInputStyle}
-                    type="email"
-                    id="email"
-                    value={userData?.email || ""}
-                    readOnly
-                  />
-
-                  <div style={{ marginTop: "20px" }}>
-                    <label
-                      style={{
-                        ...labelStyle,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        id="promotionalEmails"
-                        name="promotionalEmails"
-                        checked={userData?.promotionalEmails || false}
-                        onChange={(e) => {
-                          setUserData((prevData) => ({
-                            ...prevData,
-                            promotionalEmails: e.target.checked,
-                          }));
-                        }}
-                      />
-                      <span style={{ marginLeft: "8px" }}>
-                        Sign up for promotional emails
-                      </span>
-                    </label>
-                  </div>
-
-                  <ChangePassword />
-                </div>
-              )}
-
-              {activeTab === "payment" && (
-                <div>
-                  <h1 style={{ color: "#333", fontSize: "2rem", fontWeight: "bold" }}>
-                    Hey {userData?.firstName}!
-                  </h1>
-
-                  <h2 style={{ color: "#333", fontWeight: "bold" }}>
-                    Payment Information
-                  </h2>
-                  <div style={cardContainerStyle}>
-                    {userData?.cardData &&
-                      Object.entries(userData.cardData).map(
-                        ([cardId, card], index) => (
-                          <div key={cardId} style={cardStyle}>
-                            <h3 style={{ color: "#333", fontWeight: "bold" }}>
-                              Card {index + 1}
-                            </h3>
-
-                            <label style={labelStyle} htmlFor={`cardType${index}`}>
-                              Card Type
-                            </label>
-                            <select
-                              style={inputStyle}
-                              id={`cardType${index}`}
-                              name="cardType"
-                              value={card.cardType ? card.cardType.toLowerCase() : ""} // Convert to lowercase for comparison
-                              onChange={(e) => handleCardInputChange(cardId, e)}
-                              >
-                              <option value="">Select Card Type</option>
-                              <option value="visa">Visa</option>
-                              <option value="mastercard">MasterCard</option>
-                              <option value="amex">American Express</option>
-                            </select>
-
-                            <label style={labelStyle} htmlFor={`cardNumber${index}`}>
-                              Card Number
-                            </label>
-                            <input
-                              style={inputStyle}
-                              type="text"
-                              id={`cardNumber${index}`}
-                              name="cardNumber"
-                              value={card.cardNumber}
-                              onChange={(e) => handleCardInputChange(cardId, e)}
-                              />
-                             {validationMessages[`card${cardId}_cardNumber`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_cardNumber`]}</p>}
-
-                            <label style={labelStyle} htmlFor={`expiryDate${index}`}>
-                              Expiration Date
-                            </label>
-                            <input
-                              style={inputStyle}
-                              type="text"
-                              id={`expiryDate${index}`}
-                              name="expirationDate"
-                              value={card.expirationDate}
-                              onChange={(e) => handleCardInputChange(cardId, e)}
-                              placeholder="MM/YY"
-                            />
-                            {validationMessages[`card${cardId}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_expirationDate`]}</p>}
-
-                            <label style={labelStyle} htmlFor={`cvv${index}`}>
-                              CVV
-                            </label>
-                            <input
-                              style={inputStyle}
-                              type="text"
-                              id={`cvv${index}`}
-                              name="cvv"
-                              value={card.cvv}
-                              onChange={(e) => handleCardInputChange(cardId, e)}
-                              />
-                              {validationMessages[`card${cardId}_cvv`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_cvv`]}</p>}
-
-                            <label style={labelStyle} htmlFor={`billingAddress${index}`}>
-                              Billing Address
-                            </label>
-                            <input
-                              style={inputStyle}
-                              type="text"
-                              id={`billingAddress${index}`}
-                              name="billingAddress"
-                              value={card.billingAddress || ""} // This line ensures the billing address is populated
-                              onChange={(e) => handleCardInputChange(cardId, e)}
-                            />
-                          </div>
-                        )
-                      )}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "address" && (
-                <div>
-                  <h1 style={{ color: "#333", fontSize: "2rem", fontWeight: "bold" }}>
-                    Hey {userData?.firstName}!
-                  </h1>
-
-                  <h2 style={{ color: "#333", fontWeight: "bold" }}>Home Address</h2>
-                  <label style={labelStyle} htmlFor="street">Street</label>
-                  <input
-                    style={inputStyle}
-                    type="text"
-                    id="street"
-                    name="address.street"
-                    value={userData?.address?.street || ""}
-                    onChange={handleInputChange}
-                  />
-
-                  <label style={labelStyle} htmlFor="city">City</label>
-                  <input
-                    style={inputStyle}
-                    type="text"
-                    id="city"
-                    name="address.city"
-                    value={userData?.address?.city || ""}
-                    onChange={handleInputChange}
-                  />
-
-                  <label style={labelStyle} htmlFor="state">State</label>
-                  <select
-                    style={inputStyle}
-                    id="state"
-                    name="address.state"
-                    value={userData?.address?.state || ""}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select State</option>
-                    {[
-                      "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-                      "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-                      "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-                      "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-                      "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
-                    ].map((state) => (
-                      <option key={state} value={state}>{state}</option>
-                    ))}
-                  </select>
-
-                  <label style={labelStyle} htmlFor="zip">ZIP Code</label>
-                  <input
-                    style={inputStyle}
-                    type="text"
-                    id="zip"
-                    name="address.zip"
-                    value={userData?.address?.zip || ""}
-                    onChange={handleInputChange}
-                  />
-                  {validationMessages["address.zip"] && <p className="text-red-500 text-sm mt-1">{validationMessages["address.zip"]}</p>}
-                </div>
-              )}
-
-              {activeTab === "orders" && (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-sm">
-                    <thead className="bg-blue-100">
-                      <tr>
-                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Date</th>
-                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Movie Title</th>
-                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Showtime</th>
-                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Seats</th>
-                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Total Amount</th>
-                        <th className="py-2 px-4 text-left border-b text-gray-700 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-gray-50">
-                          <td className="py-2 px-4 border-b text-gray-800">{booking.showDate}</td>
-                          <td className="py-2 px-4 border-b text-gray-800">{booking.movieTitle}</td>
-                          <td className="py-2 px-4 border-b text-gray-800">{booking.showTime}</td>
-                          <td className="py-2 px-4 border-b text-gray-800">
-                            {booking.seats.map(s => s.seat).join(", ")}
-                          </td>
-                          <td className="py-2 px-4 border-b text-gray-800">
-                            ${booking.totalAmount.toFixed(2)}
-                          </td>
-                          <td className="py-2 px-4 border-b text-gray-800">{booking.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {renderTabContent()}
             </div>
           </div>
         </form>
