@@ -13,6 +13,7 @@ import CryptoJS from 'crypto-js';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../application/firebase/config";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const CheckoutPage = () => {
   useRequireAuth();
