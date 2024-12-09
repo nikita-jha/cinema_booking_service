@@ -508,7 +508,12 @@ const handleConfirmPayment = async () => {
         <div className="flex justify-between w-full max-w-4xl mx-auto mt-4">
           <Link href="/">
             <button 
-            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">            
+              className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => {
+                sessionStorage.clear(); // Clears all session storage
+                console.log("Session storage cleared");
+              }}
+            >
               Cancel
             </button>
           </Link>
