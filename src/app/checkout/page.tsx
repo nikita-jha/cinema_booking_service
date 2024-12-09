@@ -224,7 +224,7 @@ const CheckoutPage = () => {
       const selectedCard = savedCards[selectedCardIndex];
       setCreditCardInfo({
         cardType: selectedCard.cardType,
-        cardNumber: selectedCard.cardNumber,
+        cardNumber: maskCardNumber(selectedCard.cardNumber),
         cvv: selectedCard.cvv,
         expirationDate: selectedCard.expirationDate,
         billingAddress: selectedCard.billingAddress,
@@ -317,6 +317,7 @@ const handleConfirmPayment = async () => {
       title,
       showDate,
       showTime,
+      orderTotal: orderTotal.toString(),
       numTickets: numTickets.toString(),
       selectedSeats: JSON.stringify(selectedSeats),
     });
@@ -331,6 +332,14 @@ const handleConfirmPayment = async () => {
   const sanitizeInput = (value: string): string => {
     return value.replace(/[^a-zA-Z0-9 /]/g, ""); // Allow alphanumeric and common characters
   };
+  const maskCardNumber = (cardNumber: string): string => {
+    if (!cardNumber || cardNumber.length < 4) {
+      return cardNumber; // Handle invalid card number gracefully
+    }
+    const visibleDigits = cardNumber.slice(-4); // Last 4 digits
+    const maskedPart = "●".repeat(cardNumber.length - 4); // Black dots for the rest
+    return `${maskedPart}${visibleDigits}`;
+  };
 
   return (
     <div>
@@ -339,57 +348,92 @@ const handleConfirmPayment = async () => {
         <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
         <div className="flex">
           <div className="w-1/2 p-4">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            <p className="mb-2">Movie Title: {title}</p>
-            <p className="mb-2">Show Date: {showDate}</p>
-            <p className="mb-2">Show Time: {showTime}</p>
-            <p className="mb-2">Number of Tickets: {numTickets}</p>
+          <h2 className="text-2xl font-extrabold text-gray-800 mb-6">Order Summary</h2> {/* Increased size */}
+          <p className="text-lg mb-4">
+            <span className="font-bold text-gray-700">Movie Title:</span> {title}
+          </p>
+          <p className="text-lg mb-4">
+            <span className="font-bold text-gray-700">Show Date:</span> {showDate}
+          </p>
+          <p className="text-lg mb-4">
+            <span className="font-bold text-gray-700">Show Time:</span> {showTime}
+          </p>
+          <p className="text-lg mb-4">
+            <span className="font-bold text-gray-700">Number of Tickets:</span>{" "}
+            {numTickets}
+          </p>
+          <p className="text-lg mb-4">
+              <span className="font-bold text-gray-700">Seats:</span>{" "}
+              {selectedSeats.map((seat) => seat.seat).join(", ")}
+          </p>
             <div className="mb-2">
             {selectedSeats.map((seat, index) => {
               const ageCategory = getAgeCategory(seat.age);
               const price = ticketPrice[ageCategory.toLowerCase()];
               return (
-                <p key={index}>
-                  Ticket {index + 1} ({ageCategory.charAt(0).toUpperCase() + ageCategory.slice(1)}): $ {price.toFixed(2)}
+                <p key={index} className="text-lg text-gray-800">
+                  <span className="font-bold">Ticket {index + 1}:</span>{" "}
+                  {ageCategory.charAt(0).toUpperCase() + ageCategory.slice(1)} -{" "}
+                  ${price.toFixed(2)}
                 </p>
               );
             })}
             </div>
-            <div className="mb-4 flex items-center">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="promoCode">
-                Promotion Code (Optional)
-              </label>
-              <input
-                type="text"
-                id="promoCode"
-                value={promoCode}
-                onChange={handlePromoCodeChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2"
-                placeholder="Enter promotion code"
-              />
-              <button
-                onClick={handleApplyPromoCode}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2"
-              >
-                Apply
-              </button>
-            </div>
-            <p className="mb-2">
-              Order Total: ${orderTotal.toFixed(2)}{' '}
-              {isDiscountApplied && <span className="text-red-500">(10% Off)</span>}
-            </p>
-            <p className="mb-2">Tax: ${taxAmount.toFixed(2)}</p>
-            <p className="mb-4">Overall Total: ${overallTotal.toFixed(2)}</p>
+            <div className="mt-4">
+          <label
+            className="block text-lg font-bold text-gray-700 mb-2"
+            htmlFor="promoCode"
+          >
+            Promotion Code (Optional):
+          </label>
+          <div className="flex items-center gap-4 mb-4">
+            <input
+              type="text"
+              id="promoCode"
+              value={promoCode}
+              onChange={handlePromoCodeChange}
+              className="shadow border rounded w-full py-2 px-3 text-gray-800 focus:outline-none focus:shadow-outline"
+              placeholder="Enter promo code"
+            />
+            <button
+              onClick={handleApplyPromoCode}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all duration-200"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+        <p className="text-lg mb-4">
+          <span className="font-bold text-gray-700">Order Total:</span>{" "}
+          <span className="text-green-700 font-bold">
+            ${orderTotal.toFixed(2)}
+          </span>{" "}
+          {isDiscountApplied && (
+            <span className="text-red-500 text-sm">(10% Off Applied)</span>
+          )}
+        </p>
+        <p className="text-lg mb-4">
+          <span className="font-bold text-gray-700">Tax:</span>{" "}
+          <span className="text-green-800 font-bold">
+            ${taxAmount.toFixed(2)}
+          </span>
+        </p>
+        <p className="text-lg mb-4">
+          <span className="font-bold text-gray-700">Overall Total:</span>{" "}
+          <span className="text-green-800 font-bold">
+            ${overallTotal.toFixed(2)}
+          </span>
+        </p>
           </div>
           <div className="w-1/2 p-4">
-            <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+          <h2 className="text-2xl font-extrabold text-gray-800 mb-6">Payment Information</h2>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">
                 Select Saved Card (Optional)
               </label>
               
               <select
-                value={useSavedCard ? savedCards.findIndex(card => card.cardNumber === creditCardInfo.cardNumber) : ""}
+                value={useSavedCard ? savedCards.findIndex(card => maskCardNumber(card.cardNumber) === creditCardInfo.cardNumber) : ""}
                 disabled={savedCards.length === 0}
                 onChange={handleUseSavedCardChange}
                 className="shadow border rounded w-full py-2 px-3 text-gray-700"
