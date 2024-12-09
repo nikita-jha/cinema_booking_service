@@ -145,6 +145,13 @@ const CheckoutPage = () => {
     billingAddress: "",
   });
 
+  const [errors, setErrors] = useState({
+    cardNumber: "",
+    cvv: "",
+    expirationDate: "",
+    billingAddress: "",
+  });
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -209,13 +216,64 @@ const CheckoutPage = () => {
     setPromoCode(e.target.value);
   };
   
+  
   const handleCreditCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+  
   
     setCreditCardInfo((prevInfo) => ({
       ...prevInfo,
       [name]: sanitizeInput(value),
     }));
+  
+    let error = "";
+    setErrorMessage(
+      ""
+    );
+  
+    if (name === "cardNumber") {
+      if (!creditCardInfo.cardType) {
+        error = "Please select a card type before entering the card number.";
+      } else if (creditCardInfo.cardType === "Amex") {
+        if (!/^\d{15}$/.test(value)) {
+          error = "Card number should have 15 digits for American Express and no spaces.";
+        }
+      } else if (creditCardInfo.cardType === "Visa" || creditCardInfo.cardType === "Mastercard") {
+        if (!/^\d{16}$/.test(value)) {
+          error = "Card number should have 16 digits for Visa or Mastercard and no spaces.";
+        }
+      } else {
+        error = "Invalid card type selected.";
+      }
+    } else if (name === "cvv") {
+      const isAmex = creditCardInfo.cardType === "Amex";
+      const regex = new RegExp(`^\\d{${isAmex ? "4" : "3"}}$`);
+      if (!regex.test(value)) {
+        error = `CVV should be ${isAmex ? "4" : "3"} digits.`;
+      }
+    } else if (name === "expirationDate") {
+      const expirationRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+      if (!expirationRegex.test(value)) {
+        error = "Expiration date must be in MM/YY format.";
+      } else {
+        const [month, year] = value.split("/").map(Number);
+        const currentDate = new Date();
+        const expirationDate = new Date(`20${year}`, month - 1);
+        if (expirationDate <= currentDate) {
+          error = "Expiration date must be in the future.";
+        }
+      }
+    } else if (name === "billingAddress") {
+      if (value.trim().length === 0) {
+        error = "Billing address cannot be empty.";
+      }
+    }
+  
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: error,
+    }));
+  };
   
     let error = "";
     setErrorMessage(
@@ -476,8 +534,14 @@ const handleConfirmPayment = async () => {
                 className={`shadow appearance-none border ${
                   errors.cardNumber ? "border-red-500" : ""
                 } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
+                onChange={handleCreditCardChange}
+                className={`shadow appearance-none border ${
+                  errors.cardNumber ? "border-red-500" : ""
+                } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
                 placeholder="Enter card number"
               />
+              {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>}
+
               {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>}
 
               <label className="block text-gray-700 text-sm font-bold mb-2 mt-4" htmlFor="cvv">
@@ -492,8 +556,14 @@ const handleConfirmPayment = async () => {
                 className={`shadow appearance-none border ${
                   errors.cvv ? "border-red-500" : ""
                 } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
+                onChange={handleCreditCardChange}
+                className={`shadow appearance-none border ${
+                  errors.cvv ? "border-red-500" : ""
+                } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
                 placeholder="Enter CVV"
               />
+               {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>}
+
                {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>}
 
               <label className="block text-gray-700 text-sm font-bold mb-2 mt-4" htmlFor="expirationDate">
@@ -508,8 +578,14 @@ const handleConfirmPayment = async () => {
                 className={`shadow appearance-none border ${
                   errors.expirationDate ? "border-red-500" : ""
                 } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
+                onChange={handleCreditCardChange}
+                className={`shadow appearance-none border ${
+                  errors.expirationDate ? "border-red-500" : ""
+                } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
                 placeholder="Enter expiration date"
               />
+              {errors.expirationDate && <p className="text-red-500 text-xs mt-1">{errors.expirationDate}</p>}
+
               {errors.expirationDate && <p className="text-red-500 text-xs mt-1">{errors.expirationDate}</p>}
 
               <label className="block text-gray-700 text-sm font-bold mb-2 mt-4" htmlFor="billingAddress">
@@ -520,6 +596,10 @@ const handleConfirmPayment = async () => {
                 id="billingAddress"
                 name="billingAddress"
                 value={creditCardInfo.billingAddress}
+                onChange={handleCreditCardChange}
+                className={`shadow appearance-none border ${
+                  errors.billingAddress ? "border-red-500" : ""
+                } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
                 onChange={handleCreditCardChange}
                 className={`shadow appearance-none border ${
                   errors.billingAddress ? "border-red-500" : ""
