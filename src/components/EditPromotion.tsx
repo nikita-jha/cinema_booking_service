@@ -38,13 +38,6 @@ const EditPromotion: React.FC<EditPromotionProps> = ({ promotion, onPromotionUpd
 
   return (
     <div className="mb-8 flex flex-col items-center">
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2"
-        onClick={() => setIsFormOpen(true)}
-      >
-        Edit
-      </button>
-
       {isFormOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -70,7 +63,7 @@ const EditPromotion: React.FC<EditPromotionProps> = ({ promotion, onPromotionUpd
                 name="value"
                 value={promotionData.value}
                 onChange={handleInputChange}
-                placeholder="Discount Percentage"
+                placeholder="Value"
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
@@ -90,14 +83,12 @@ const EditPromotion: React.FC<EditPromotionProps> = ({ promotion, onPromotionUpd
                 className="mb-2 w-full p-2 border rounded text-gray-800"
                 required
               />
-              <div className="flex justify-end mt-4">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Update Promotion
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Update
+              </button>
             </form>
           </div>
         </div>
