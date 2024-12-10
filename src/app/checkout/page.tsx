@@ -218,6 +218,7 @@ const CheckoutPage = () => {
     setErrorMessage(
       ""
     );
+    console.log("Credit card info changed:", name, value);
   
     if (name === "cardNumber") {
       if (!creditCardInfo.cardType) {
@@ -302,7 +303,7 @@ const CheckoutPage = () => {
   const isPaymentInfoComplete = () => {
     if (useSavedCard) {
       const cardSelected = savedCards.findIndex(
-        (card) => card.cardNumber === creditCardInfo.cardNumber
+        (card) => maskCardNumber(card.cardNumber) === creditCardInfo.cardNumber
       ) !== -1;
       console.log("Saved card selected:", cardSelected);
       return cardSelected; // Ensure a saved card is selected
@@ -368,12 +369,6 @@ const handleConfirmPayment = async () => {
 
   setErrorMessage("");
 
-  if (!validateCreditCardInfo(creditCardInfo)) {
-    setErrorMessage(
-      "Invalid payment information. Please check your details and try again."
-    );
-    return;
-  }
 
   try {
     // Reserve seats first
