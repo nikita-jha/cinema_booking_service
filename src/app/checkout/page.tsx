@@ -315,6 +315,49 @@ const CheckoutPage = () => {
     return isValid;
   };
 
+  const sendBookingConfirmationEmail = async (userEmail: string, bookingDetails: any) => {
+    // Calculate the counts for each ticket category
+    const ticketCounts = bookingDetails.seats.reduce((counts, seat) => {
+      const ageCategory = getAgeCategory(seat.age);
+      counts[ageCategory] = (counts[ageCategory] || 0) + 1;
+      return counts;
+    }, {});
+  
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          subject: "Booking Confirmation - Cinema E-Booking System",
+          message: `
+            Booking Confirmation
+  
+            Your booking is confirmed for ${bookingDetails.movieTitle} on ${bookingDetails.showDate} at ${bookingDetails.showTime}.
+            Seats booked: ${bookingDetails.seats.map(seat => seat.seat).join(', ')}.
+            Total Amount: $${bookingDetails.totalAmount.toFixed(2)}.
+  
+            Ticket Breakdown:
+            Adults: ${ticketCounts.adult || 0}
+            Children: ${ticketCounts.child || 0}
+            Seniors: ${ticketCounts.senior || 0}
+  
+            Thank you for booking with Cinema E-Booking System. Enjoy your movie!
+          `,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+  
+      const data = await response.json();
+    } catch (error) {
+      console.error("Failed to send email:", error);
+    }
+  };
 
 const handleConfirmPayment = async () => {
   if (!isPaymentInfoComplete()) {
@@ -332,15 +375,21 @@ const handleConfirmPayment = async () => {
     if (!userId) throw new Error("User must be logged in to reserve seats.");
     await reserveSeats(showId, selectedSeats, userId);
 
-    // Add booking to user history
-    await addBookingToUserHistory(userId, {
+    const bookingDetails = {
       movieTitle: title,
       showDate,
       showTime,
       seats: selectedSeats,
       totalAmount: overallTotal,
       status: "confirmed",
-    });
+    };
+    await addBookingToUserHistory(userId, bookingDetails);
+    
+    // Send confirmation email
+    const userEmail = auth.currentUser?.email; // Retrieve the user's email from the auth data
+    if (userEmail) {
+      await sendBookingConfirmationEmail(userEmail, bookingDetails);
+    }
 
     sessionStorage.removeItem("bookingState");
 
