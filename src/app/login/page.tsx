@@ -72,6 +72,7 @@ const LoginPage = () => {
         });
     
         return () => unsubscribe();
+
     }, [setUser, router]);
     
     
@@ -163,6 +164,13 @@ const LoginPage = () => {
                 setErrorMessage("No user found with this email address.");
                 return;
             }
+
+            const actionCodeSettings = {
+                // Custom URL for reset password
+                url: `${window.location.origin}/reset-password?email=${email}`, 
+                handleCodeInApp: true, 
+            };
+    
 
             await sendPasswordResetEmail(auth, email);
             setEmailSentMessage("Password reset email sent! Check your inbox.");
