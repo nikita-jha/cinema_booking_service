@@ -314,6 +314,13 @@ const CheckoutPage = () => {
   };
 
   const sendBookingConfirmationEmail = async (userEmail: string, bookingDetails: any) => {
+    // Calculate the counts for each ticket category
+    const ticketCounts = bookingDetails.seats.reduce((counts, seat) => {
+      const ageCategory = getAgeCategory(seat.age);
+      counts[ageCategory] = (counts[ageCategory] || 0) + 1;
+      return counts;
+    }, {});
+  
     try {
       const response = await fetch("/api/send-email", {
         method: "POST",
@@ -323,7 +330,20 @@ const CheckoutPage = () => {
         body: JSON.stringify({
           email: userEmail,
           subject: "Booking Confirmation - Cinema E-Booking System",
-          message: `Your booking is confirmed for ${bookingDetails.movieTitle} on ${bookingDetails.showDate} at ${bookingDetails.showTime}. Seats: ${bookingDetails.seats.map(seat => seat.seat).join(', ')}. Total Amount: $${bookingDetails.totalAmount.toFixed(2)}.`,
+          message: `
+            Booking Confirmation
+  
+            Your booking is confirmed for ${bookingDetails.movieTitle} on ${bookingDetails.showDate} at ${bookingDetails.showTime}.
+            Seats booked: ${bookingDetails.seats.map(seat => seat.seat).join(', ')}.
+            Total Amount: $${bookingDetails.totalAmount.toFixed(2)}.
+  
+            Ticket Breakdown:
+            Adults: ${ticketCounts.adult || 0}
+            Children: ${ticketCounts.child || 0}
+            Seniors: ${ticketCounts.senior || 0}
+  
+            Thank you for booking with Cinema E-Booking System. Enjoy your movie!
+          `,
         }),
       });
   
@@ -336,7 +356,6 @@ const CheckoutPage = () => {
       console.error("Failed to send email:", error);
     }
   };
-
 
 const handleConfirmPayment = async () => {
   if (!isPaymentInfoComplete()) {
