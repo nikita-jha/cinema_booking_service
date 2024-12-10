@@ -93,7 +93,9 @@ const MovieDetailsPage = () => {
     return <div>Loading...</div>;
   }
 
-  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl, runtime, releaseDate, reviews = [], showDates = [] } = movieData;
+  const { category, director, mpaaRating, producer, cast, synopsis, trailerPictureUrl, trailerVideoUrl, runtime, releaseDate, reviews: rawReviews = [], showDates = [] } = movieData;
+
+  const reviews = typeof rawReviews === 'string' ? [rawReviews] : rawReviews;
 
   let embedUrl = "";
   if (trailerVideoUrl) {
@@ -191,12 +193,14 @@ const MovieDetailsPage = () => {
           </div>
           <div className="mb-8 border-t pt-4">
         <h2 className="text-xl font-semibold mb-3">Reviews</h2>
-        {reviews ? (
-            <div className="border p-4 rounded-lg mb-4 shadow-md">
-            <p className="text-gray-700">{reviews}</p>
+        {reviews.length > 0 ? (
+          reviews.map((review, index) => (
+            <div key={index} className="mb-2 p-2 border rounded">
+              <p>{review}</p>
             </div>
+          ))
         ) : (
-            <p>No reviews available for this movie.</p>
+          <p>No reviews available.</p>
         )}
         </div>
           <Link
