@@ -18,7 +18,7 @@ const ConfirmationPage = () => {
 
   const [orderNumber, setOrderNumber] = useState<string>("");
 
-  // Add labels to below conole log to display the values
+  // Add labels to below console log to display the values
   console.log(title, showDate, showTime, selectedSeats, numTickets, orderTotal);
 
   useEffect(() => {
@@ -40,9 +40,9 @@ const ConfirmationPage = () => {
   return (
     <div>
       <Navbar />
-      <div className="mt-60"></div> {/* Add spacing */}
-      <div className="container mx-auto flex justify-center items-center h-full bg-white-100">
-        <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+      <div className="mt-20"></div> {/* Adjust spacing */}
+      <div className="container mx-auto flex justify-center items-start h-full bg-white-100">
+        <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md mt-10">
           <h1 className="text-2xl font-bold text-green-600 mb-4 text-center">
             Booking Confirmation
           </h1>
@@ -67,7 +67,7 @@ const ConfirmationPage = () => {
             </p>
             <p className="mb-2">
               <span className="font-semibold">Seats:</span>{" "}
-            {selectedSeats.map((seat) => seat.seat).join(", ")}
+              {selectedSeats.map((seat) => seat.seat).join(", ")}
             </p>
             <p className="mb-2">
               <span className="font-semibold">Order Total:</span>{" "}
