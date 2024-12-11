@@ -33,7 +33,7 @@ const BookingPage = () => {
   const [roomId, setRoomId] = useState<string | null>(null); // Add state for room ID
   const [loading, setLoading] = useState(true); // Add loading state
   const [sessionState, setSessionState] = useState(null); // Add session state
-  const [ticketPrices, setTicketPrices] = useState<{ adult: number; child: number; senior: number } | null>(null);
+  const [ticketPrices, setTicketPrices] = useState<{ adult: 20; child: 10; senior: 15 } | null>(null);
 
 
   const searchParams = useSearchParams();

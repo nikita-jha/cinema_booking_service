@@ -22,9 +22,9 @@ const AddMovie: React.FC<AddMovieProps> = ({ onMovieAdded }) => {
     reviews: "",
     genre: "",
     ticketPrices: {
-      child: "",
-      adult: "",
-      senior: "",
+      child: "10",
+      adult: "20",
+      senior: "15",
     },
   });
   const [validationMessages, setValidationMessages] = useState({
