@@ -47,31 +47,31 @@ const ConfirmationPage = () => {
             Booking Confirmation
           </h1>
           <div className="border-t border-gray-200 mt-4 pt-4">
-            <h2 className="text-xl font-semibold mb-2">Booking Details</h2>
-            <p className="mb-2">
+            <h2 className="text-xl font-semibold mb-2 text-black">Booking Details</h2>
+            <p className="mb-2 text-black">
               <span className="font-semibold">Order Number:</span>{" "}
               <span className="text-blue-600 font-mono">{orderNumber}</span>
             </p>
-            <p className="mb-2">
+            <p className="mb-2 text-black">
               <span className="font-semibold">Movie Title:</span> {title}
             </p>
-            <p className="mb-2">
+            <p className="mb-2 text-black">
               <span className="font-semibold">Show Date:</span> {showDate}
             </p>
-            <p className="mb-2">
+            <p className="mb-2 text-black">
               <span className="font-semibold">Show Time:</span> {showTime}
             </p>
-            <p className="mb-2">
+            <p className="mb-2 text-black">
               <span className="font-semibold">Number of Tickets:</span>{" "}
               {numTickets}
             </p>
-            <p className="mb-2">
+            <p className="mb-2 text-black">
               <span className="font-semibold">Seats:</span>{" "}
               {selectedSeats.map((seat) => seat.seat).join(", ")}
             </p>
-            <p className="mb-2">
+            <p className="mb-2 text-black">
               <span className="font-semibold">Order Total:</span>{" "}
-              ${orderTotal}
+              ${orderTotal.toFixed(2)}
             </p>
           </div>
           <div className="text-center mt-6">
