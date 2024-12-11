@@ -33,17 +33,43 @@ export class BookingFacade {
   }
 
   async reserveSeats(userId: string, showId: string, seats: number[]) {
-    console.log("Reserving seats...");
-
+    console.log("Initiating seat reservation process...");
+  
+    // Step 1: Fetch user details
+    const user = await this.userController.fetchUserDetails(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found.`);
+    }
+  
+    // Step 2: Validate user account status
+    if (user.status !== "active") {
+      throw new Error("User account is not active. Cannot proceed with reservation.");
+    }
+  
+    // Step 3: Fetch show details
+    const show = await this.showController.fetchShowDetails(showId);
+    if (!show) {
+      throw new Error(`Show with ID ${showId} not found.`);
+    }
+  
+    // Step 4: Check show status
+    if (show.status !== "available") {
+      throw new Error("Show is no longer available for reservations.");
+    }
+  
+    // Step 5: Validate seat availability
     const unavailableSeats = await this.showController.validateSeatAvailability(showId, seats);
     if (unavailableSeats.length > 0) {
       throw new Error(`Seats ${unavailableSeats.join(", ")} are already reserved.`);
     }
 
+    // Step 6: Reserve seats
     await this.showController.bookSeats(showId, seats, userId);
-    console.log(`Reserved seats ${seats.join(", ")} for user ${userId} in show ${showId}.`);
-
-    return { success: true, message: "Seats reserved successfully." };
+  
+    return {
+      success: true,
+      message: `Seats reserved successfully.`,
+    };
   }
 
   async applyPromotion(promoCode: string) {

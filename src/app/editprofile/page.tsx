@@ -200,6 +200,7 @@ const EditProfilePage = () => {
                 ])
               );
               data.cardData = decryptedCardData;
+              console.log(data.cardData);
             }
             setOriginalUserData(data);
             setUserData(data);
@@ -241,12 +242,13 @@ const EditProfilePage = () => {
   
   const decryptCardData = (encryptedCard: EncryptedCardData) => {
     const encryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
+    console.log("DECRYPTED CARD DATA: ", CryptoJS.AES.decrypt(encryptedCard.billingAddress, encryptionKey).toString(CryptoJS.enc.Utf8))
     return {
       cardType: encryptedCard.cardType,
       cardNumber: CryptoJS.AES.decrypt(encryptedCard.cardNumber, encryptionKey).toString(CryptoJS.enc.Utf8),
       expirationDate: CryptoJS.AES.decrypt(encryptedCard.expirationDate, encryptionKey).toString(CryptoJS.enc.Utf8),
       cvv: CryptoJS.AES.decrypt(encryptedCard.cvv, encryptionKey).toString(CryptoJS.enc.Utf8),
-      billingAddress: CryptoJS.AES.decrypt(encryptedCard.billingAddress, encryptionKey).toString(CryptoJS.enc.Utf8),
+      billingAddress: CryptoJS.AES.decrypt(encryptedCard.billingAddress, encryptionKey).toString(CryptoJS.enc.Utf8)
     };
   };
   
@@ -389,7 +391,7 @@ const EditProfilePage = () => {
       cardNumber: CryptoJS.AES.encrypt(card.cardNumber || '', encryptionKey).toString(),
       expirationDate: CryptoJS.AES.encrypt(card.expirationDate || '', encryptionKey).toString(),
       cvv: CryptoJS.AES.encrypt(card.cvv || '', encryptionKey).toString(),
-      billingAddress: card.billingAddress, 
+      billingAddress: CryptoJS.AES.encrypt(card.billingAddress || '', encryptionKey).toString()
     };
   };
 

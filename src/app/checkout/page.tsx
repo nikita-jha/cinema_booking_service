@@ -179,7 +179,7 @@ const CheckoutPage = () => {
               ...card,
               cardNumber: decryptData(card.cardNumber),
               expirationDate: decryptData(card.expirationDate),
-              billingAddress: card.billingAddress,
+              billingAddress:  decryptData(card.billingAddress),
               cvv: decryptData(card.cvv),
             }))
             .filter((card) => card.cardNumber && card.cardNumber.length >= 4);
