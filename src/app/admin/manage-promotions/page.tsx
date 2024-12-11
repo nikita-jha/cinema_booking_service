@@ -93,7 +93,7 @@ const ManagePromotionsPage = () => {
                         disabled={promotion.emailSent}
                       />
                       <button
-                        className={`font-bold py-2 px-4 rounded ${promotion.emailSent ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-700 text-white'}`}
+                        className={`bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ${promotion.emailSent ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => deleteCallback(promotion.id)}
                         disabled={promotion.emailSent}
                       >

@@ -246,7 +246,7 @@ const EditProfilePage = () => {
       cardNumber: CryptoJS.AES.decrypt(encryptedCard.cardNumber, encryptionKey).toString(CryptoJS.enc.Utf8),
       expirationDate: CryptoJS.AES.decrypt(encryptedCard.expirationDate, encryptionKey).toString(CryptoJS.enc.Utf8),
       cvv: CryptoJS.AES.decrypt(encryptedCard.cvv, encryptionKey).toString(CryptoJS.enc.Utf8),
-      billingAddress: encryptedCard.billingAddress, // Add this line
+      billingAddress: CryptoJS.AES.decrypt(encryptedCard.billingAddress, encryptionKey).toString(CryptoJS.enc.Utf8),
     };
   };
   
@@ -821,12 +821,12 @@ const OrderHistory = () => {
                       />
                       {validationMessages[`card${cardId}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_expirationDate`]}</p>}
 
-                      <label style={labelStyle} htmlFor={`cvv${index}`}>
+                        <label style={labelStyle} htmlFor={`cvv${index}`}>
                         CVV
-                      </label>
-                      <input
+                        </label>
+                        <input
                         style={inputStyle}
-                        type="text"
+                        type="password"
                         id={`cvv${index}`}
                         name="cvv"
                         value={card.cvv}

@@ -5,7 +5,7 @@ import Navbar from '../../components/Navbar';
 import { useRouter } from 'next/navigation';
 import { auth } from '../../application/firebase/config'; 
 import { Button } from '@mui/material';
-import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../application/firebase/config';
 import CryptoJS from 'crypto-js'; 
@@ -175,23 +175,35 @@ const router = useRouter(); // Initialize the router
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     // Validate form data
     if (!isFormValid) {
       console.log('Form is not valid');
       return;
     }
     setIsSubmitting(true);
-
+  
     try {
+      // Check if email already exists
+      const signInMethods = await fetchSignInMethodsForEmail(auth, formData.email);
+      if (signInMethods.length > 0) {
+        console.log('Email already exists');
+        setValidationMessages((prevMessages) => ({
+          ...prevMessages,
+          email: 'Email already exists.',
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+  
       // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
-
+  
       // Send email verification
       await sendEmailVerification(user);
       console.log("Verification email sent!");
-
+  
       // Encrypt card data
       const encryptionKey = process.env.NEXT_PUBLIC_CARD_ENCRYPTION_KEY || 'defaultKey';
       const encryptedCardData = cardData.map(card => ({
@@ -201,7 +213,7 @@ const router = useRouter(); // Initialize the router
         cvv: card.cvv ? CryptoJS.AES.encrypt(card.cvv, encryptionKey).toString() : '',
         billingAddress: card.billingAddress ? CryptoJS.AES.encrypt(card.billingAddress, encryptionKey).toString() : ''
       }));
-
+  
       // Prepare user data for Firestore
       const userData = {
         uid: user.uid,
@@ -218,10 +230,10 @@ const router = useRouter(); // Initialize the router
       };
       
       console.log("Encrypted card data:", encryptedCardData);
-
+  
       // Store user data in Firestore 
       await setDoc(doc(db, "users", user.uid), userData);
-
+  
       console.log('User registered successfully!');
       router.push('/confirmregister');
     } catch (error) {
@@ -230,6 +242,7 @@ const router = useRouter(); // Initialize the router
       setIsSubmitting(false);
     }
   };
+  
 
   const validateForm = () => {
     const { email, firstName, lastName, password, phone } = formData;
@@ -614,14 +627,19 @@ const router = useRouter(); // Initialize the router
                   <span style={{ marginLeft: '8px' }}>Sign up for promotional emails</span>
                 </label>
               </div>
+
+              {validationMessages.email && (
+                <p className="text-red-500 text-sm mt-1">{validationMessages.email}</p>
+              )}
+
               <Button 
                 variant="contained" 
                 disabled={!isFormValid} 
                 onClick={handleSubmit}
                 fullWidth
-                >
+              >
                 Submit
-                </Button>
+              </Button>
             </div>
           )}
         </form>
