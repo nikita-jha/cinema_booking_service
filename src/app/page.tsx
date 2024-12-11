@@ -62,6 +62,7 @@ const HomePage = () => {
   const [comingSoonMovies, setComingSoonMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isShowDateLoading, setIsShowDateLoading] = useState(false); // New state for show date loading
   const [user, setUser] = useState(null);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false); // Define isAdvancedSearch state
@@ -90,6 +91,7 @@ const HomePage = () => {
   };
 
   const fetchShowtimesForMovies = async (date: string, movies: any[]) => {
+    setIsShowDateLoading(true); 
     const newShowtimes: { [movieId: string]: string[] } = {};
 
     for (const movie of movies) {
@@ -110,6 +112,7 @@ const HomePage = () => {
     }
 
     setShowtimes(newShowtimes);
+    setIsShowDateLoading(false);
   };
 
   useEffect(() => {
@@ -246,24 +249,32 @@ const HomePage = () => {
             />
           </div>
         )}
-  
-        {filteredCurrentlyScreeningMovies.length === 0 && filteredComingSoonMovies.length === 0 ? (
+
+        {isShowDateLoading ? (
           <div className="text-center text-gray-800 text-xl mt-12">
-            No results found with current search criteria.
+            Loading showtimes...
           </div>
         ) : (
           <>
-            {filteredCurrentlyScreeningMovies.length > 0 && (
-              <MovieCarousel
-                title="Now Screening"
-                movies={filteredCurrentlyScreeningMovies}
-              />
-            )}
-            {filteredComingSoonMovies.length > 0 && (
-              <MovieCarousel 
-                title="Coming Soon" 
-                movies={filteredComingSoonMovies} 
-              />
+            {filteredCurrentlyScreeningMovies.length === 0 && filteredComingSoonMovies.length === 0 ? (
+              <div className="text-center text-gray-800 text-xl mt-12">
+                No results found with current search criteria.
+              </div>
+            ) : (
+              <>
+                {filteredCurrentlyScreeningMovies.length > 0 && (
+                  <MovieCarousel
+                    title="Now Screening"
+                    movies={filteredCurrentlyScreeningMovies}
+                  />
+                )}
+                {filteredComingSoonMovies.length > 0 && (
+                  <MovieCarousel 
+                    title="Coming Soon" 
+                    movies={filteredComingSoonMovies} 
+                  />
+                )}
+              </>
             )}
           </>
         )}
