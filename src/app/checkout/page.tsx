@@ -170,15 +170,20 @@ const CheckoutPage = () => {
           const cards = await getSavedCardsForUser(userId);
           console.log("CARD DATA:", cards);
   
+          const cardsArray = Array.isArray(cards)
+            ? cards
+            : Object.keys(cards).map((key) => cards[key]);
           // Decrypt sensitive fields before displaying
-          const decryptedCards = cards.map(card => ({
-            ...card,
-            cardNumber: decryptData(card.cardNumber),
-            expirationDate: decryptData(card.expirationDate),
-            billingAddress: decryptData(card.billingAddress),
-            cvv: decryptData(card.cvv),
-            // No decrypting CVV (leaving it out for security)
-          })).filter(card => card.cardNumber && card.cardNumber.length >= 4);
+          const decryptedCards = cardsArray
+            .map((card) => ({
+              ...card,
+              cardNumber: decryptData(card.cardNumber),
+              expirationDate: decryptData(card.expirationDate),
+              billingAddress: card.billingAddress,
+              cvv: decryptData(card.cvv),
+            }))
+            .filter((card) => card.cardNumber && card.cardNumber.length >= 4);
+
 
           console.log("DECRYPTED CARD DATA:", decryptedCards);
   
