@@ -8,6 +8,7 @@ import { onAuthStateChanged } from "firebase/auth"; // Import this function
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../application/firebase/firestore";
 import Link from "next/link";
+import useRequireAuth from '../../components/RequireAuth'; // Import the useRequireAuth hook
 
 const formatTime = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);
@@ -20,6 +21,7 @@ const formatTime = (time24) => {
 const inputStyle = { color: 'black' };
 
 const BookingPage = () => {
+  useRequireAuth(); // Ensure the user is authenticated
   const [movieData, setMovieData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
