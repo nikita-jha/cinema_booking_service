@@ -44,12 +44,17 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const handleNavClick = () => {
+    sessionStorage.clear(); // Clear session storage on any click in the navbar
+    console.log("Session storage cleared");
+  };
+
   if (loading) {
     return <div>Loading...</div>; // Or any loading indicator
   }
 
   return (
-    <nav className="bg-blue-600 p-4">
+    <nav className="bg-blue-600 p-4" onClick={handleNavClick}>
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="text-white text-2xl font-bold">
           Cinema E-Booking
