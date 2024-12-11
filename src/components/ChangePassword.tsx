@@ -40,6 +40,34 @@ const ChangePassword = () => {
         setOldPassword(e.target.value);
     };
 
+    const sendPasswordChangeEmail = async (email) => {
+        try {
+            const response = await fetch("/api/send-email", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email: email,
+                    subject: "Password Change Confirmation - Cinema E-Booking System",
+                    message: `
+                        Your password has been successfully updated.
+                        If this was not you, please contact our support immediately.
+                    `,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            const data = await response.json();
+            console.log("Password change confirmation email sent successfully");
+        } catch (error) {
+            console.error("Failed to send password change confirmation email:", error);
+        }
+    };
+
     const handlePasswordChange = async () => {
         setError('');
         setSuccess('');
@@ -66,6 +94,9 @@ const ChangePassword = () => {
 
             setSuccess('Password updated successfully!');
             console.log('Password updated successfully!');
+
+            // Send confirmation email upon successful password change
+            await sendPasswordChangeEmail(user.email);
             
             // Clear form and close modal after success
             setTimeout(() => {
