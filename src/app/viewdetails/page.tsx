@@ -167,7 +167,7 @@ const MovieDetailsPage = () => {
           <div className="flex items-center mb-4">
             <input
               type="date"
-              className="p-2 border rounded w-48"
+              className="p-2 border rounded w-48 text-black"
               value={selectedDate || ""}
               onChange={handleDateChange}
               min={new Date().toISOString().split("T")[0]} // Restrict to current date or future dates
