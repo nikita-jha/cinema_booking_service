@@ -35,8 +35,13 @@ const BookingPage = () => {
   const [roomId, setRoomId] = useState<string | null>(null); // Add state for room ID
   const [loading, setLoading] = useState(true); // Add loading state
   const [sessionState, setSessionState] = useState(null); // Add session state
+<<<<<<< HEAD
   const [ticketPrices, setTicketPrices] = useState<{ adult: number; child: number; senior: number } | null>(null);
   const [availableShows, setAvailableShows] = useState<string[]>([]); // Add available shows state
+=======
+  const [ticketPrices, setTicketPrices] = useState<{ adult: 20; child: 10; senior: 15 } | null>(null);
+
+>>>>>>> 2c2d222 (Fixed default ticket prices)
 
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
