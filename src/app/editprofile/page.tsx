@@ -821,12 +821,12 @@ const OrderHistory = () => {
                       />
                       {validationMessages[`card${cardId}_expirationDate`] && <p className="text-red-500 text-sm mt-1">{validationMessages[`card${cardId}_expirationDate`]}</p>}
 
-                      <label style={labelStyle} htmlFor={`cvv${index}`}>
+                        <label style={labelStyle} htmlFor={`cvv${index}`}>
                         CVV
-                      </label>
-                      <input
+                        </label>
+                        <input
                         style={inputStyle}
-                        type="text"
+                        type="password"
                         id={`cvv${index}`}
                         name="cvv"
                         value={card.cvv}
