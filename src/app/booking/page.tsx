@@ -9,7 +9,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../application/firebase/firestore";
 import Link from "next/link";
 import useRequireAuth from '../../components/RequireAuth'; // Import the useRequireAuth hook
-import { BookingFacade } from "../../application/facade/BookingFacade";
+import { BookingFacade } from "./bookingFacade";
 
 
 const formatTime = (time24) => {
