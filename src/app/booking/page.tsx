@@ -9,6 +9,8 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { fetchSeatsForShow, reserveSeats, validateSeatAvailability } from "../../application/firebase/firestore";
 import Link from "next/link";
 import useRequireAuth from '../../components/RequireAuth'; // Import the useRequireAuth hook
+import { BookingFacade } from "../../application/facade/BookingFacade";
+
 
 const formatTime = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);
@@ -34,7 +36,7 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(true); // Add loading state
   const [sessionState, setSessionState] = useState(null); // Add session state
   const [ticketPrices, setTicketPrices] = useState<{ adult: number; child: number; senior: number } | null>(null);
-
+  const [availableShows, setAvailableShows] = useState<string[]>([]); // Add available shows state
 
   const searchParams = useSearchParams();
   const title = searchParams.get("title");
@@ -42,7 +44,8 @@ const BookingPage = () => {
 
   const currentDate = new Date();
   const currentDateString = currentDate.toISOString().split("T")[0]; // Format as yyyy-mm-dd
-  
+  const bookingFacade = new BookingFacade();
+
   useEffect(() => {
     // Monitor the logged-in user
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -129,6 +132,29 @@ const BookingPage = () => {
   console.log("Ticket Prices :", ticketPrices);
 
 
+  const reserveSeatsForUser = async () => {
+    setError("");
+
+    try {
+      const result = await bookingFacade.reserveSeats(userId, showId, selectedSeats);
+      if (result.success) {
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred while reserving seats.");
+    }
+  };
+
+  const fetchAvailableShowsForDate = async (date: string) => {
+    setError("");
+
+    try {
+      const shows = await bookingFacade.fetchAvailableShows(date);
+      setAvailableShows(shows); // Update state with fetched shows
+    } catch (err: any) {
+      setError(err.message || "An error occurred while fetching shows.");
+    }
+  };
+
   const clearSavedState = () => {
     sessionStorage.removeItem("bookingState");
   };
@@ -149,6 +175,8 @@ const BookingPage = () => {
       console.error("Error fetching showtimes:", error);
     }
   };
+
+
 
   const fetchRoomId = async () => {
     if (!movieData || !selectedDate || !selectedShowtime) return;
@@ -225,7 +253,11 @@ const BookingPage = () => {
     sessionStorage.setItem("bookingState", JSON.stringify(state));
   };
   
-  
+  const reserve = async () => {
+    reserveSeatsForUser()
+    fetchAvailableShowsForDate("2022-01-01")
+    console.log(availableShows)
+  };
 
   return (
     <div>
